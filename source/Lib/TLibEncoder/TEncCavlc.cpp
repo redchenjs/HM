@@ -230,15 +230,12 @@ Void TEncCavlc::codePPS( TComPPS* pcPPS )
   WRITE_FLAG( pcPPS->getScalingListPresentFlag() ? 1 : 0,                          "pps_scaling_list_data_present_flag" );
   if( pcPPS->getScalingListPresentFlag() )
   {
-#if SCALING_LIST_OUTPUT_RESULT
-    printf("PPS\n");
-#endif
     codeScalingList( m_pcSlice->getScalingList() );
   }
   WRITE_FLAG( pcPPS->getListsModificationPresentFlag(), "lists_modification_present_flag");
   WRITE_UVLC( pcPPS->getLog2ParallelMergeLevelMinus2(), "log2_parallel_merge_level_minus2");
   WRITE_FLAG( pcPPS->getSliceHeaderExtensionPresentFlag() ? 1 : 0, "slice_segment_header_extension_present_flag");
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
+
   if (pcPPS->getTransformSkipLog2MaxSize()!=2 && pcPPS->getUseTransformSkip())
   {
     WRITE_FLAG( 1, "pps_extension_flag1" );
@@ -249,9 +246,6 @@ Void TEncCavlc::codePPS( TComPPS* pcPPS )
   {
     WRITE_FLAG( 0, "pps_extension_flag1" );
   }
-#else
-  WRITE_FLAG( 0, "pps_extension_flag" );
-#endif
 }
 
 Void TEncCavlc::codeVUI( TComVUI *pcVUI, TComSPS* pcSPS )
@@ -484,9 +478,6 @@ Void TEncCavlc::codeSPS( TComSPS* pcSPS )
     WRITE_FLAG( pcSPS->getScalingListPresentFlag() ? 1 : 0,                          "sps_scaling_list_data_present_flag" );
     if(pcSPS->getScalingListPresentFlag())
     {
-#if SCALING_LIST_OUTPUT_RESULT
-    printf("SPS\n");
-#endif
       codeScalingList( m_pcSlice->getScalingList() );
     }
   }
@@ -542,44 +533,28 @@ Void TEncCavlc::codeSPS( TComSPS* pcSPS )
 #if RExt__NRCE2_RESIDUAL_ROTATION
        || pcSPS->getUseResidualRotation()
 #endif
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
        || pcSPS->getUseSingleSignificanceMapContext()
-#endif
-#if RExt__N0256_INTRA_BLOCK_COPY
        || pcSPS->getUseIntraBlockCopy()
-#endif
 #if RExt__NRCE2_RESIDUAL_DPCM
        || pcSPS->getUseResidualDPCM(MODE_INTRA)
        || pcSPS->getUseResidualDPCM(MODE_INTER)
 #endif
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
        || pcSPS->getUseExtendedPrecision()
-#endif
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
        || pcSPS->getDisableIntraReferenceSmoothing()
-#endif
     )
   {
     WRITE_FLAG( 1, "sps_extension1_flag" );
 #if RExt__NRCE2_RESIDUAL_ROTATION
     WRITE_FLAG( (pcSPS->getUseResidualRotation() ? 1 : 0),             "transform_skip_rotation_enabled_flag");
 #endif
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
     WRITE_FLAG( (pcSPS->getUseSingleSignificanceMapContext() ? 1 : 0), "transform_skip_context_enabled_flag");
-#endif
-#if RExt__N0256_INTRA_BLOCK_COPY
-    WRITE_FLAG( (pcSPS->getUseIntraBlockCopy() ? 1 : 0),           "intra_block_copy_enabled_flag");
-#endif
+    WRITE_FLAG( (pcSPS->getUseIntraBlockCopy() ? 1 : 0),               "intra_block_copy_enabled_flag");
 #if RExt__NRCE2_RESIDUAL_DPCM
     WRITE_FLAG( (pcSPS->getUseResidualDPCM(MODE_INTRA) ? 1 : 0),       "residual_dpcm_intra_enabled_flag" );
     WRITE_FLAG( (pcSPS->getUseResidualDPCM(MODE_INTER) ? 1 : 0),       "residual_dpcm_inter_enabled_flag" );
 #endif
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
     WRITE_FLAG( (pcSPS->getUseExtendedPrecision() ? 1 : 0),            "extended_precision_processing_flag" );
-#endif
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
     WRITE_FLAG( (pcSPS->getDisableIntraReferenceSmoothing() ? 1 : 0),  "intra_smoothing_disabled_flag" );
-#endif
     WRITE_FLAG( 0, "sps_extension2_flag" );
   }
   else
@@ -740,7 +715,6 @@ Void TEncCavlc::codeSliceHeader         ( TComSlice* pcSlice )
       WRITE_CODE( picOrderCntLSB, pcSlice->getSPS()->getBitsForPOC(), "pic_order_cnt_lsb");
       TComReferencePictureSet* rps = pcSlice->getRPS();
       
-#if FIX1071
       // check for bitstream restriction stating that:
       // If the current picture is a BLA or CRA picture, the value of NumPocTotalCurr shall be equal to 0.
       // Ideally this process should not be repeated for each slice in a picture
@@ -751,7 +725,6 @@ Void TEncCavlc::codeSliceHeader         ( TComSlice* pcSlice )
           assert (!rps->getUsed(picIdx));
         }
       }
-#endif
 
       if(pcSlice->getRPSidx() < 0)
       {
@@ -853,11 +826,15 @@ Void TEncCavlc::codeSliceHeader         ( TComSlice* pcSlice )
     if(pcSlice->getSPS()->getUseSAO())
     {
        WRITE_FLAG( pcSlice->getSaoEnabledFlag(), "slice_sao_luma_flag" );
+#if HM_CLEANUP_SAO
+       if (chromaEnabled) WRITE_FLAG( pcSlice->getSaoEnabledFlagChroma(), "slice_sao_chroma_flag" );
+#else
        SAOParam *saoParam = pcSlice->getPic()->getPicSym()->getSaoParam();
        if (chromaEnabled)
        {
          WRITE_FLAG( (chromaEnabled ? saoParam->bSaoFlag[CHANNEL_TYPE_CHROMA] : false), "slice_sao_chroma_flag" ); // NOTE: RExt - This SE is not in the SPS header for 4:0:0.
        }
+#endif
     }
 
     //check if numrefidxes match the defaults. If not, override
@@ -1218,11 +1195,7 @@ Void TEncCavlc::codeQtRootCbf( TComDataCU* pcCU, UInt uiAbsPartIdx )
   assert(0);
 }
 
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_986
-Void TEncCavlc::codeQtCbfZero( TComTU &rTu, const ChannelType chType, const Bool useAdjustedDepth )
-#else
 Void TEncCavlc::codeQtCbfZero( TComTU &rTu, const ChannelType chType )
-#endif
 {
   assert(0);
 }
@@ -1256,7 +1229,6 @@ Void TEncCavlc::codeIntraDirChroma( TComDataCU* pcCU, UInt uiAbsPartIdx )
   assert(0);
 }
 
-#if RExt__N0256_INTRA_BLOCK_COPY
 Void TEncCavlc::codeIntraBCFlag( TComDataCU* pcCU, UInt uiAbsPartIdx )
 {
   assert(0);
@@ -1266,7 +1238,6 @@ Void TEncCavlc::codeIntraBC( TComDataCU* pcCU, UInt uiAbsPartIdx )
 {
   assert(0);
 }
-#endif
 
 Void TEncCavlc::codeInterDir( TComDataCU* pcCU, UInt uiAbsPartIdx )
 {
@@ -1408,56 +1379,33 @@ Void TEncCavlc::codeScalingList( TComScalingList* scalingList )
   UInt listId,sizeId;
   Bool scalingListPredModeFlag;
 
-#if SCALING_LIST_OUTPUT_RESULT
-  Int startBit;
-  Int startTotalBit;
-  startBit = m_pcBitIf->getNumberOfWrittenBits();
-  startTotalBit = m_pcBitIf->getNumberOfWrittenBits();
-#endif
-
-    //for each size
-    for(sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+  //for each size
+  for(sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+  {
+    Int predListStep = (sizeId == SCALING_LIST_32x32? (SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES) : 1); // if 32x32, skip over chroma entries.
+ 
+    for(listId = 0; listId < SCALING_LIST_NUM; listId+=predListStep)
     {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
-      Int predListStep = (sizeId == SCALING_LIST_32x32? (SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES) : 1); // if 32x32, skip over chroma entries.
-      for(listId = 0; listId < SCALING_LIST_NUM; listId+=predListStep)
-#else
-      for(listId = 0; listId < g_scalingListNum[sizeId]; listId++)
-#endif
+      scalingListPredModeFlag = scalingList->checkPredMode( sizeId, listId );
+      WRITE_FLAG( scalingListPredModeFlag, "scaling_list_pred_mode_flag" );
+      if(!scalingListPredModeFlag)// Copy Mode
       {
-#if SCALING_LIST_OUTPUT_RESULT
-        startBit = m_pcBitIf->getNumberOfWrittenBits();
-#endif
-        scalingListPredModeFlag = scalingList->checkPredMode( sizeId, listId );
-        WRITE_FLAG( scalingListPredModeFlag, "scaling_list_pred_mode_flag" );
-        if(!scalingListPredModeFlag)// Copy Mode
+        if (sizeId == SCALING_LIST_32x32)
         {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
-          if (sizeId == SCALING_LIST_32x32)
-          {
-            // adjust the code, to cope with the missing chroma entries
-            WRITE_UVLC( ((Int)listId - (Int)scalingList->getRefMatrixId (sizeId,listId)) / (SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES), "scaling_list_pred_matrix_id_delta");
-          }
-          else
-          {
-            WRITE_UVLC( (Int)listId - (Int)scalingList->getRefMatrixId (sizeId,listId), "scaling_list_pred_matrix_id_delta");
-          }
-#else
+          // adjust the code, to cope with the missing chroma entries
+          WRITE_UVLC( ((Int)listId - (Int)scalingList->getRefMatrixId (sizeId,listId)) / (SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES), "scaling_list_pred_matrix_id_delta");
+        }
+        else
+        {
           WRITE_UVLC( (Int)listId - (Int)scalingList->getRefMatrixId (sizeId,listId), "scaling_list_pred_matrix_id_delta");
-#endif
         }
-        else// DPCM Mode
-        {
-          xCodeScalingList(scalingList, sizeId, listId);
-        }
-#if SCALING_LIST_OUTPUT_RESULT
-        printf("Matrix [%d][%d] Bit %d\n",sizeId,listId,m_pcBitIf->getNumberOfWrittenBits() - startBit);
-#endif
+      }
+      else// DPCM Mode
+      {
+        xCodeScalingList(scalingList, sizeId, listId);
       }
     }
-#if SCALING_LIST_OUTPUT_RESULT
-  printf("Total Bit %d\n",m_pcBitIf->getNumberOfWrittenBits()-startTotalBit);
-#endif
+  }
   return;
 }
 /** code DPCM
@@ -1509,12 +1457,9 @@ Bool TEncCavlc::findMatchingLTRP ( TComSlice* pcSlice, UInt *ltrpsIndex, Int ltr
 }
 Bool TComScalingList::checkPredMode(UInt sizeId, UInt listId)
 {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
   Int predListStep = (sizeId == SCALING_LIST_32x32? (SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES) : 1); // if 32x32, skip over chroma entries.
+
   for(Int predListIdx = (Int)listId ; predListIdx >= 0; predListIdx-=predListStep)
-#else
-  for(Int predListIdx = (Int)listId ; predListIdx >= 0; predListIdx--)
-#endif
   {
     if( !memcmp(getScalingListAddress(sizeId,listId),((listId == predListIdx) ?
       getScalingListDefaultAddress(sizeId, predListIdx): getScalingListAddress(sizeId, predListIdx)),sizeof(Int)*min(MAX_MATRIX_COEF_NUM,(Int)g_scalingListSize[sizeId])) // check value of matrix

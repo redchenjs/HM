@@ -160,14 +160,8 @@ Void TAppEncTop::xInitLibCfg()
 #endif
   m_cTEncTop.setUseAdaptiveQP                ( m_bUseAdaptiveQP  );
   m_cTEncTop.setQPAdaptationRange            ( m_iQPAdaptationRange );
-  
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   m_cTEncTop.setUseExtendedPrecision         ( m_useExtendedPrecision );
-#endif
-
-#if RExt__N0256_INTRA_BLOCK_COPY
-  m_cTEncTop.setUseIntraBlockCopy        ( m_useIntraBlockCopy );
-#endif
+  m_cTEncTop.setUseIntraBlockCopy            ( m_useIntraBlockCopy );
 
   //====== Tool list ========
   m_cTEncTop.setUseSBACRD                    ( m_bUseSBACRD   );
@@ -196,12 +190,8 @@ Void TAppEncTop::xInitLibCfg()
 #if RExt__NRCE2_RESIDUAL_ROTATION
   m_cTEncTop.setUseResidualRotation          ( m_useResidualRotation   );
 #endif
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
   m_cTEncTop.setUseSingleSignificanceMapContext( m_useSingleSignificanceMapContext   );
-#endif
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
   m_cTEncTop.setTransformSkipLog2MaxSize     ( m_transformSkipLog2MaxSize  );
-#endif
 #if RExt__NRCE2_RESIDUAL_DPCM
   for (UInt predictionModeIndex = 0; predictionModeIndex < NUMBER_OF_PREDICTION_MODES; predictionModeIndex++)
   {
@@ -251,18 +241,17 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setMaxNumOffsetsPerPic (m_maxNumOffsetsPerPic);
 
   m_cTEncTop.setSaoLcuBoundary (m_saoLcuBoundary);
+#if !HM_CLEANUP_SAO
   m_cTEncTop.setSaoLcuBasedOptimization (m_saoLcuBasedOptimization);
+#endif
   m_cTEncTop.setPCMInputBitDepthFlag  ( m_bPCMInputBitDepthFlag);
   m_cTEncTop.setPCMFilterDisableFlag  ( m_bPCMFilterDisableFlag);
 
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
-  m_cTEncTop.setDisableIntraReferenceSmoothing(!m_enableIntraReferenceSmoothing);
-#endif
-
-  m_cTEncTop.setDecodedPictureHashSEIEnabled(m_decodedPictureHashSEIEnabled);
-  m_cTEncTop.setRecoveryPointSEIEnabled( m_recoveryPointSEIEnabled );
-  m_cTEncTop.setBufferingPeriodSEIEnabled( m_bufferingPeriodSEIEnabled );
-  m_cTEncTop.setPictureTimingSEIEnabled( m_pictureTimingSEIEnabled );
+  m_cTEncTop.setDisableIntraReferenceSmoothing            (!m_enableIntraReferenceSmoothing);
+  m_cTEncTop.setDecodedPictureHashSEIEnabled              (m_decodedPictureHashSEIEnabled);
+  m_cTEncTop.setRecoveryPointSEIEnabled                   ( m_recoveryPointSEIEnabled );
+  m_cTEncTop.setBufferingPeriodSEIEnabled                 ( m_bufferingPeriodSEIEnabled );
+  m_cTEncTop.setPictureTimingSEIEnabled                   ( m_pictureTimingSEIEnabled );
   m_cTEncTop.setToneMappingInfoSEIEnabled                 ( m_toneMappingInfoSEIEnabled );
   m_cTEncTop.setTMISEIToneMapId                           ( m_toneMapId );
   m_cTEncTop.setTMISEIToneMapCancelFlag                   ( m_toneMapCancelFlag );
@@ -296,9 +285,7 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setDisplayOrientationSEIAngle( m_displayOrientationSEIAngle );
   m_cTEncTop.setTemporalLevel0IndexSEIEnabled( m_temporalLevel0IndexSEIEnabled );
   m_cTEncTop.setGradualDecodingRefreshInfoEnabled( m_gradualDecodingRefreshInfoEnabled );
-#if RExt__M0042_NO_DISPLAY_SEI
   m_cTEncTop.setNoDisplaySEITLayer( m_noDisplaySEITLayer );
-#endif
   m_cTEncTop.setDecodingUnitInfoSEIEnabled( m_decodingUnitInfoSEIEnabled );
   m_cTEncTop.setSOPDescriptionSEIEnabled( m_SOPDescriptionSEIEnabled );
   m_cTEncTop.setScalableNestingSEIEnabled( m_scalableNestingSEIEnabled );
@@ -323,7 +310,6 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setUseScalingListId           ( m_useScalingListId  );
   m_cTEncTop.setScalingListFile            ( m_scalingListFile   );
   m_cTEncTop.setSignHideFlag(m_signHideFlag);
-#if RATE_CONTROL_LAMBDA_DOMAIN
   m_cTEncTop.setUseRateCtrl         ( m_RCEnableRateControl );
   m_cTEncTop.setTargetBitrate       ( m_RCTargetBitrate );
   m_cTEncTop.setKeepHierBit         ( m_RCKeepHierarchicalBit );
@@ -331,11 +317,6 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setUseLCUSeparateModel ( m_RCUseLCUSeparateModel );
   m_cTEncTop.setInitialQP           ( m_RCInitialQP );
   m_cTEncTop.setForceIntraQP        ( m_RCForceIntraQP );
-#else
-  m_cTEncTop.setUseRateCtrl     ( m_enableRateCtrl);
-  m_cTEncTop.setTargetBitrate   ( m_targetBitrate);
-  m_cTEncTop.setNumLCUInUnit    ( m_numLCUInUnit);
-#endif
   m_cTEncTop.setTransquantBypassEnableFlag(m_TransquantBypassEnableFlag);
 #if RExt__BACKWARDS_COMPATIBILITY_HM_TRANSQUANTBYPASS
   m_cTEncTop.setCUTransquantBypassFlagValue(m_CUTransquantBypassFlagValue);
@@ -672,7 +653,7 @@ void TAppEncTop::rateStatsAccum(const AccessUnit& au, const std::vector<UInt>& a
     {
     case NAL_UNIT_CODED_SLICE_TRAIL_R:
     case NAL_UNIT_CODED_SLICE_TRAIL_N:
-    case NAL_UNIT_CODED_SLICE_TLA_R:
+    case NAL_UNIT_CODED_SLICE_TSA_R:
     case NAL_UNIT_CODED_SLICE_TSA_N:
     case NAL_UNIT_CODED_SLICE_STSA_R:
     case NAL_UNIT_CODED_SLICE_STSA_N:

@@ -497,18 +497,11 @@ Void fillReferenceSamples( const Int bitDepth, TComDataCU* pcCU, const Pel* piRo
  * The prediction mode index is used to determine whether a smoothed reference sample buffer is returned.
  */
 
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
 Bool TComPrediction::filteringIntraReferenceSamples(const ComponentID compID, UInt uiDirMode, UInt uiTuChWidth, UInt uiTuChHeight, const ChromaFormat chFmt, const Bool intraReferenceSmoothingDisabled)
-#else
-Bool TComPrediction::filteringIntraReferenceSamples(const ComponentID compID, UInt uiDirMode, UInt uiTuChWidth, UInt uiTuChHeight, const ChromaFormat chFmt)
-#endif
 {
   Bool bFilter;
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
+
   if (!filterIntraReferenceSamples(toChannelType(compID), chFmt, intraReferenceSmoothingDisabled))
-#else
-  if (!filterIntraReferenceSamples(toChannelType(compID), chFmt))
-#endif
   {
     bFilter=false;
   }
@@ -538,11 +531,7 @@ Bool isAboveLeftAvailable( TComDataCU* pcCU, UInt uiPartIdxLT )
   TComDataCU* pcCUAboveLeft = pcCU->getPUAboveLeft( uiPartAboveLeft, uiPartIdxLT );
   if(pcCU->getSlice()->getPPS()->getConstrainedIntraPred())
   {
-#if RExt__N0256_INTRA_BLOCK_COPY
     bAboveLeftFlag = ( pcCUAboveLeft && pcCUAboveLeft->isConstrainedIntra( uiPartAboveLeft ) );
-#else
-    bAboveLeftFlag = ( pcCUAboveLeft && pcCUAboveLeft->getPredictionMode( uiPartAboveLeft ) == MODE_INTRA );
-#endif
   }
   else
   {
@@ -565,11 +554,7 @@ Int isAboveAvailable( TComDataCU* pcCU, UInt uiPartIdxLT, UInt uiPartIdxRT, Bool
     TComDataCU* pcCUAbove = pcCU->getPUAbove( uiPartAbove, g_auiRasterToZscan[uiRasterPart] );
     if(pcCU->getSlice()->getPPS()->getConstrainedIntraPred())
     {
-#if RExt__N0256_INTRA_BLOCK_COPY
       if ( pcCUAbove && pcCUAbove->isConstrainedIntra( uiPartAbove ) )
-#else
-      if ( pcCUAbove && pcCUAbove->getPredictionMode( uiPartAbove ) == MODE_INTRA )
-#endif
       {
         iNumIntra++;
         *pbValidFlags = true;
@@ -610,11 +595,7 @@ Int isLeftAvailable( TComDataCU* pcCU, UInt uiPartIdxLT, UInt uiPartIdxLB, Bool 
     TComDataCU* pcCULeft = pcCU->getPULeft( uiPartLeft, g_auiRasterToZscan[uiRasterPart] );
     if(pcCU->getSlice()->getPPS()->getConstrainedIntraPred())
     {
-#if RExt__N0256_INTRA_BLOCK_COPY
       if ( pcCULeft && pcCULeft->isConstrainedIntra( uiPartLeft ) )
-#else
-      if ( pcCULeft && pcCULeft->getPredictionMode( uiPartLeft ) == MODE_INTRA )
-#endif
       {
         iNumIntra++;
         *pbValidFlags = true;
@@ -654,11 +635,7 @@ Int isAboveRightAvailable( TComDataCU* pcCU, UInt uiPartIdxLT, UInt uiPartIdxRT,
     TComDataCU* pcCUAboveRight = pcCU->getPUAboveRightAdi( uiPartAboveRight, uiPartIdxRT, uiOffset );
     if(pcCU->getSlice()->getPPS()->getConstrainedIntraPred())
     {
-#if RExt__N0256_INTRA_BLOCK_COPY
       if ( pcCUAboveRight && pcCUAboveRight->isConstrainedIntra( uiPartAboveRight ) )
-#else
-      if ( pcCUAboveRight && pcCUAboveRight->getPredictionMode( uiPartAboveRight ) == MODE_INTRA )
-#endif
       {
         iNumIntra++;
         *pbValidFlags = true;
@@ -698,11 +675,7 @@ Int isBelowLeftAvailable( TComDataCU* pcCU, UInt uiPartIdxLT, UInt uiPartIdxLB, 
     TComDataCU* pcCUBelowLeft = pcCU->getPUBelowLeftAdi( uiPartBelowLeft, uiPartIdxLB, uiOffset );
     if(pcCU->getSlice()->getPPS()->getConstrainedIntraPred())
     {
-#if RExt__N0256_INTRA_BLOCK_COPY
       if ( pcCUBelowLeft && pcCUBelowLeft->isConstrainedIntra( uiPartBelowLeft ) )
-#else
-      if ( pcCUBelowLeft && pcCUBelowLeft->getPredictionMode( uiPartBelowLeft ) == MODE_INTRA )
-#endif
       {
         iNumIntra++;
         *pbValidFlags = true;

@@ -724,24 +724,15 @@ private:
   // Parameter
   Int         m_uiBitDepth[MAX_NUM_CHANNEL_TYPE];
   Int         m_qpBDOffset[MAX_NUM_CHANNEL_TYPE];
-
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   Bool        m_useExtendedPrecision;
-#endif
-
-#if RExt__N0256_INTRA_BLOCK_COPY
   Bool        m_useIntraBlockCopy;
-#endif
-
   Bool        m_useLossless;
 
 #if RExt__NRCE2_RESIDUAL_ROTATION
   Bool        m_useResidualRotation;
 #endif
 
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
   Bool        m_useSingleSignificanceMapContext;
-#endif
 
 #if RExt__NRCE2_RESIDUAL_DPCM
   Bool        m_useResidualDPCM[NUMBER_OF_PREDICTION_MODES];
@@ -749,9 +740,7 @@ private:
 
   UInt        m_uiPCMBitDepth[MAX_NUM_CHANNEL_TYPE];
   Bool        m_bPCMFilterDisableFlag;
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
   Bool        m_disableIntraReferenceSmoothing;
-#endif
 
   UInt        m_uiBitsForPOC;
   UInt        m_numLongTermRefPicSPS;
@@ -869,15 +858,10 @@ public:
   Void      setBitDepth     (ChannelType type, Int u ) { m_uiBitDepth[type] = u;      }
   Int       getQpBDOffset   (ChannelType type) const   { return m_qpBDOffset[type];   }
   Void      setQpBDOffset   (ChannelType type, Int i)  { m_qpBDOffset[type] = i;      }
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   Bool      getUseExtendedPrecision()          const   { return m_useExtendedPrecision;  }
   Void      setUseExtendedPrecision(Bool value)        { m_useExtendedPrecision = value; }
-#endif
-
-#if RExt__N0256_INTRA_BLOCK_COPY
   Bool      getUseIntraBlockCopy()         const   { return m_useIntraBlockCopy;  }
   Void      setUseIntraBlockCopy(Bool value)       { m_useIntraBlockCopy = value; }
-#endif
 
   Void setUseSAO                  (Bool bVal)  {m_bUseSAO = bVal;}
   Bool getUseSAO                  ()           {return m_bUseSAO;}
@@ -887,10 +871,8 @@ public:
   Void     setUseResidualRotation            (const Bool value)       { m_useResidualRotation = value; }
 #endif
 
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
   Bool     getUseSingleSignificanceMapContext()                 const { return m_useSingleSignificanceMapContext;  }
   Void     setUseSingleSignificanceMapContext(const Bool value)       { m_useSingleSignificanceMapContext = value; }
-#endif
 
 #if RExt__NRCE2_RESIDUAL_DPCM
   Bool     getUseResidualDPCM (const PredMode predictionMode)        const      { return m_useResidualDPCM[predictionMode];  }
@@ -906,11 +888,8 @@ public:
   Void      setPCMBitDepth         (ChannelType type, UInt u) { m_uiPCMBitDepth[type] = u;    }
   Void      setPCMFilterDisableFlag     ( Bool   bValue  )    { m_bPCMFilterDisableFlag = bValue; }
   Bool      getPCMFilterDisableFlag     ()                    { return m_bPCMFilterDisableFlag;   } 
-
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
   Void      setDisableIntraReferenceSmoothing (Bool bValue)   { m_disableIntraReferenceSmoothing=bValue; }
   Bool      getDisableIntraReferenceSmoothing ()        const { return m_disableIntraReferenceSmoothing; }
-#endif
 
   Bool getScalingListFlag       ()         { return m_scalingListEnabledFlag;     }
   Void setScalingListFlag       ( Bool b ) { m_scalingListEnabledFlag  = b;       }
@@ -989,9 +968,7 @@ private:
 
   Bool        m_TransquantBypassEnableFlag; // Indicates presence of cu_transquant_bypass_flag in CUs.
   Bool        m_useTransformSkip;
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
   Int         m_transformSkipLog2MaxSize;
-#endif
   Bool        m_dependentSliceSegmentsEnabledFlag;     //!< Indicates the presence of dependent slices
   Bool        m_tilesEnabledFlag;              //!< Indicates the presence of tiles
   Bool        m_entropyCodingSyncEnabledFlag;  //!< Indicates the presence of wavefronts
@@ -1067,10 +1044,8 @@ public:
 
   Bool      getUseTransformSkip       ()         { return m_useTransformSkip;     }
   Void      setUseTransformSkip       ( Bool b ) { m_useTransformSkip  = b;       }
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
   UInt      getTransformSkipLog2MaxSize ()         { return m_transformSkipLog2MaxSize;     }
   Void      setTransformSkipLog2MaxSize ( UInt u ) { m_transformSkipLog2MaxSize  = u;       }
-#endif
 
   Void    setLoopFilterAcrossTilesEnabledFlag  (Bool b)    { m_loopFilterAcrossTilesEnabledFlag = b; }
   Bool    getLoopFilterAcrossTilesEnabledFlag  ()          { return m_loopFilterAcrossTilesEnabledFlag;   }
@@ -1226,16 +1201,7 @@ private:
   UInt        m_colRefIdx;
   UInt        m_maxNumMergeCand;
 
-#if SAO_CHROMA_LAMBDA
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_990_SAO
-  Double      m_dLambdaLuma;
-  Double      m_dLambdaChroma;
-#else
-  Double      m_dLambdas[MAX_NUM_COMPONENT];
-#endif
-#else
-  Double      m_dLambda;
-#endif
+  Double      m_lambdas[MAX_NUM_COMPONENT];
 
   Bool        m_abEqualRef  [NUM_REF_PIC_LIST_01][MAX_NUM_REF][MAX_NUM_REF];
   UInt        m_uiTLayer;
@@ -1374,11 +1340,7 @@ public:
   Void      setPic              ( TComPic* p )                  { m_pcPic             = p;      }
   Void      setDepth            ( Int iDepth )                  { m_iDepth            = iDepth; }
   
-#if FIX1071
   Void      setRefPicList       ( TComList<TComPic*>& rcListPic, Bool checkNumPocTotalCurr = false );
-#else
-  Void      setRefPicList       ( TComList<TComPic*>& rcListPic );
-#endif
   Void      setRefPOCList       ();
   Void      setColFromL0Flag    ( UInt colFromL0 ) { m_colFromL0Flag = colFromL0; }
   Void      setColRefIdx        ( UInt refIdx) { m_colRefIdx = refIdx; }
@@ -1389,19 +1351,8 @@ public:
   Bool      isInterB        ()                          { return  m_eSliceType == B_SLICE;  }
   Bool      isInterP        ()                          { return  m_eSliceType == P_SLICE;  }
   
-#if SAO_CHROMA_LAMBDA  
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_990_SAO
-  Void      setLambda( Double d, Double e ) { m_dLambdaLuma = d; m_dLambdaChroma = e;}
-  Double    getLambdaLuma() { return m_dLambdaLuma;        }
-  Double    getLambdaChroma() { return m_dLambdaChroma;        }
-#else
-  Void      setLambda( const Double dLambdas[MAX_NUM_COMPONENT] ) { for(UInt i=0; i<MAX_NUM_COMPONENT; i++) m_dLambdas[i]=dLambdas[i]; }
-  const Double* getLambdas() const { return m_dLambdas; }
-#endif
-#else
-  Void      setLambda( Double d ) { m_dLambda = d; }
-  Double    getLambda() { return m_dLambda;        }
-#endif
+  Void      setLambdas ( const Double lambdas[MAX_NUM_COMPONENT] ) { for (Int component = 0; component < MAX_NUM_COMPONENT; component++) m_lambdas[component] = lambdas[component]; }
+  const Double* getLambdas() const { return m_lambdas; }
   
   Void      initEqualRef();
   Bool      isEqualRef  ( RefPicList e, Int iRefIdx1, Int iRefIdx2 )
@@ -1430,11 +1381,7 @@ public:
   Bool isTemporalLayerSwitchingPoint( TComList<TComPic*>& rcListPic );
   Bool isStepwiseTemporalLayerSwitchingPointCandidate( TComList<TComPic*>& rcListPic );
   Int       checkThatAllRefPicsAreAvailable( TComList<TComPic*>& rcListPic, TComReferencePictureSet *pReferencePictureSet, Bool printErrors, Int pocRandomAccess = 0);
-#if FIX1071
   Void      createExplicitReferencePictureSetFromReference( TComList<TComPic*>& rcListPic, TComReferencePictureSet *pReferencePictureSet, Bool isRAP);
-#else
-  Void      createExplicitReferencePictureSetFromReference( TComList<TComPic*>& rcListPic, TComReferencePictureSet *pReferencePictureSet);
-#endif
   Void setMaxNumMergeCand               (UInt val )         { m_maxNumMergeCand = val;                    }
   UInt getMaxNumMergeCand               ()                  { return m_maxNumMergeCand;                   }
 

@@ -319,8 +319,7 @@ Void TDecCavlc::parsePPS(TComPPS* pcPPS)
   READ_FLAG( uiCode, "slice_segment_header_extension_present_flag");
   pcPPS->setSliceHeaderExtensionPresentFlag(uiCode);
 
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
-  READ_FLAG( uiCode, "sps_extension1_flag");
+  READ_FLAG( uiCode, "pps_extension1_flag");
 
   if (uiCode != 0)
   {
@@ -333,9 +332,6 @@ Void TDecCavlc::parsePPS(TComPPS* pcPPS)
     READ_FLAG( uiCode, "pps_extension2_flag");
   }
 
-#else
-  READ_FLAG( uiCode, "pps_extension_flag");
-#endif
   if (uiCode)
   {
     while ( xMoreRbspData() )
@@ -565,11 +561,8 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   }
 
   READ_UVLC(     uiCode, "bit_depth_luma_minus8" );
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   assert(uiCode <= 8);
-#else
-  assert(uiCode <= 6);
-#endif
+
   pcSPS->setBitDepth(CHANNEL_TYPE_LUMA, 8 + uiCode);
   pcSPS->setQpBDOffset(CHANNEL_TYPE_LUMA, (Int) (6*uiCode) );
 
@@ -577,11 +570,7 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   if (bChroma)
   {
     READ_UVLC( uiCode,    "bit_depth_chroma_minus8" ); // NOTE: RExt - This SE is not in the SPS header for 4:0:0
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
     assert(uiCode <= 8);
-#else
-    assert(uiCode <= 6);
-#endif
   }
   pcSPS->setBitDepth(CHANNEL_TYPE_CHROMA, 8 + uiCode); // NOTE: RExt - for 4:0:0, this will be setting the bit depths for chroma to that of luma
   pcSPS->setQpBDOffset(CHANNEL_TYPE_CHROMA,  (Int) (6*uiCode) );
@@ -701,22 +690,14 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 #if RExt__NRCE2_RESIDUAL_ROTATION
     READ_FLAG( uiCode, "transform_skip_rotation_enabled_flag");   pcSPS->setUseResidualRotation(uiCode != 0);
 #endif
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
     READ_FLAG( uiCode, "transform_skip_context_enabled_flag");    pcSPS->setUseSingleSignificanceMapContext(uiCode != 0);
-#endif
-#if RExt__N0256_INTRA_BLOCK_COPY
     READ_FLAG( uiCode, "intra_block_copy_enabled_flag");          pcSPS->setUseIntraBlockCopy(uiCode != 0);
-#endif
 #if RExt__NRCE2_RESIDUAL_DPCM
     READ_FLAG( uiCode, "residual_dpcm_intra_enabled_flag");       pcSPS->setUseResidualDPCM(MODE_INTRA, (uiCode != 0));
     READ_FLAG( uiCode, "residual_dpcm_inter_enabled_flag");       pcSPS->setUseResidualDPCM(MODE_INTER, (uiCode != 0));
 #endif
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
     READ_FLAG( uiCode, "extended_precision_processing_flag");     pcSPS->setUseExtendedPrecision(uiCode != 0);
-#endif
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
     READ_FLAG( uiCode, "intra_smoothing_disabled_flag");          pcSPS->setDisableIntraReferenceSmoothing(uiCode != 0);
-#endif
     READ_FLAG( uiCode, "sps_extension2_flag");
   }
 
@@ -1579,7 +1560,6 @@ Void TDecCavlc::parseIntraDirChroma( TComDataCU* /*pcCU*/, UInt /*uiAbsPartIdx*/
   assert(0);
 }
 
-#if RExt__N0256_INTRA_BLOCK_COPY
 Void TDecCavlc::parseIntraBCFlag ( TComDataCU* /*pcCU*/, UInt /*uiAbsPartIdx*/, UInt uiPartIdx, UInt /*uiDepth*/ )
 {
   assert(0);
@@ -1589,7 +1569,6 @@ Void TDecCavlc::parseIntraBC ( TComDataCU* /*pcCU*/, UInt /*uiAbsPartIdx*/, UInt
 {
   assert(0);
 }
-#endif
 
 Void TDecCavlc::parseInterDir( TComDataCU* /*pcCU*/, UInt& /*ruiInterDir*/, UInt /*uiAbsPartIdx*/ )
 {
@@ -1801,13 +1780,8 @@ Void TDecCavlc::parseScalingList(TComScalingList* scalingList)
   //for each size
   for(sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
   {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
     for(listId = 0; listId <  SCALING_LIST_NUM; listId++)
-#else
-    for(listId = 0; listId <  g_scalingListNum[sizeId]; listId++)
-#endif
     {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
       if ((sizeId==SCALING_LIST_32x32) && (listId%(SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES) != 0))
       {
         Int *src = scalingList->getScalingListAddress(sizeId, listId);
@@ -1821,32 +1795,28 @@ Void TDecCavlc::parseScalingList(TComScalingList* scalingList)
       }
       else
       {
-#endif
-
-      READ_FLAG( code, "scaling_list_pred_mode_flag");
-      scalingListPredModeFlag = (code) ? true : false;
-      if(!scalingListPredModeFlag) //Copy Mode
-      {
-        READ_UVLC( code, "scaling_list_pred_matrix_id_delta");
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
-        if (sizeId==SCALING_LIST_32x32)
-          code*=(SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES); // Adjust the decoded code for this size, to cope with the missing 32x32 chroma entries.
-#endif
-        scalingList->setRefMatrixId (sizeId,listId,(UInt)((Int)(listId)-(code)));
-        if( sizeId > SCALING_LIST_8x8 )
+        READ_FLAG( code, "scaling_list_pred_mode_flag");
+        scalingListPredModeFlag = (code) ? true : false;
+        if(!scalingListPredModeFlag) //Copy Mode
         {
-          scalingList->setScalingListDC(sizeId,listId,((listId == scalingList->getRefMatrixId (sizeId,listId))? 16 :scalingList->getScalingListDC(sizeId, scalingList->getRefMatrixId (sizeId,listId))));
-        }
-        scalingList->processRefMatrix( sizeId, listId, scalingList->getRefMatrixId (sizeId,listId));
+          READ_UVLC( code, "scaling_list_pred_matrix_id_delta");
 
+          if (sizeId==SCALING_LIST_32x32)
+            code*=(SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES); // Adjust the decoded code for this size, to cope with the missing 32x32 chroma entries.
+
+          scalingList->setRefMatrixId (sizeId,listId,(UInt)((Int)(listId)-(code)));
+          if( sizeId > SCALING_LIST_8x8 )
+          {
+            scalingList->setScalingListDC(sizeId,listId,((listId == scalingList->getRefMatrixId (sizeId,listId))? 16 :scalingList->getScalingListDC(sizeId, scalingList->getRefMatrixId (sizeId,listId))));
+          }
+          scalingList->processRefMatrix( sizeId, listId, scalingList->getRefMatrixId (sizeId,listId));
+
+        }
+        else //DPCM Mode
+        {
+          xDecodeScalingList(scalingList, sizeId, listId);
+        }
       }
-      else //DPCM Mode
-      {
-        xDecodeScalingList(scalingList, sizeId, listId);
-      }
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
-      }
-#endif
     }
   }
 

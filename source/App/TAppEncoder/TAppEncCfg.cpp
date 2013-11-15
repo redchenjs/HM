@@ -228,9 +228,7 @@ strToLevel[] =
   {"6",   Level::LEVEL6},
   {"6.1", Level::LEVEL6_1},
   {"6.2", Level::LEVEL6_2},
-#if RExt__MEETINGNOTES_UNLIMITED_SIZE_LEVEL
   {"8.5", Level::LEVEL8_5},
-#endif
 };
 
 #if RExt__LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_EVALUATION
@@ -339,9 +337,7 @@ Bool TAppEncCfg::parseCfg( Int argc, Char* argv[] )
   ("InputBitDepthC",        m_inputBitDepth[CHANNEL_TYPE_CHROMA],        0, "As per InputBitDepth but for chroma component. (default:InputBitDepth)")
   ("OutputBitDepthC",       m_outputBitDepth[CHANNEL_TYPE_CHROMA],       0, "As per OutputBitDepth but for chroma component. (default:InternalBitDepthC)")
   ("InternalBitDepthC",     m_internalBitDepth[CHANNEL_TYPE_CHROMA],     0, "As per InternalBitDepth but for chroma component. (default:IntrenalBitDepth)")
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   ("ExtendedPrecision",     m_useExtendedPrecision,                  false, "Increased internal accuracies to support high bit depths (not valid in V1 profiles)")
-#endif
 #if RExt__COLOUR_SPACE_CONVERSIONS
   ("InputColourSpaceConvert",      inputColourSpaceConvert,         string(""), "Colour space conversion to apply to input video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(true))
   ("SNRInternalColourSpace",  m_snrInternalColourSpace,             false, "If true, then no colour space conversion is applied prior to SNR, otherwise inverse of input is applied.")
@@ -443,14 +439,10 @@ Bool TAppEncCfg::parseCfg( Int argc, Char* argv[] )
 
   // Coding tools
   ("AMP",                     m_enableAMP,               true,  "Enable asymmetric motion partitions")
-#if RExt__N0256_INTRA_BLOCK_COPY
-  ("IntraBlockCopyEnabled",    m_useIntraBlockCopy,  false, "Enable the use of intra block copying vectors (not valid in V1 profiles)")
-#endif
+  ("IntraBlockCopyEnabled",   m_useIntraBlockCopy,  false, "Enable the use of intra block copying vectors (not valid in V1 profiles)")
   ("TransformSkip",           m_useTransformSkip,        false, "Intra transform skipping")
   ("TransformSkipFast",       m_useTransformSkipFast,    false, "Fast intra transform skipping")
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
   ("TransformSkipLog2MaxSize", m_transformSkipLog2MaxSize,  2U, "Specify transform-skip maximum size. Minimum 2. (not valid in V1 profiles)")
-#endif
 #if RExt__NRCE2_RESIDUAL_DPCM
   ("IntraResidualDPCM",       m_useResidualDPCM[MODE_INTRA], false, "Enable residual DPCM for intra (also known as sample-adaptive intra predict) (not valid in V1 profiles)")
   ("InterResidualDPCM",       m_useResidualDPCM[MODE_INTER], false, "Enable residual DPCM for inter (not valid in V1 profiles)")
@@ -458,13 +450,13 @@ Bool TAppEncCfg::parseCfg( Int argc, Char* argv[] )
 #if RExt__NRCE2_RESIDUAL_ROTATION
   ("ResidualRotation",        m_useResidualRotation,         false, "Enable rotation of transform-skipped and transquant-bypassed TUs through 180 degrees prior to entropy coding (not valid in V1 profiles)")
 #endif
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
   ("SingleSignificanceMapContext", m_useSingleSignificanceMapContext, false, "Enable, for transform-skipped and transquant-bypassed TUs, the selection of a single significance map context variable for all coefficients (not valid in V1 profiles)")
-#endif
   ("SAO",                     m_bUseSAO,                 true,  "Enable Sample Adaptive Offset")
   ("MaxNumOffsetsPerPic",     m_maxNumOffsetsPerPic,     2048,  "Max number of SAO offset per picture (Default: 2048)")   
   ("SAOLcuBoundary",          m_saoLcuBoundary,          false, "0: right/bottom LCU boundary areas skipped from SAO parameter estimation, 1: non-deblocked pixels are used for those areas")
+#if !HM_CLEANUP_SAO
   ("SAOLcuBasedOptimization", m_saoLcuBasedOptimization, true,  "0: SAO picture-based optimization, 1: SAO LCU-based optimization ")
+#endif
   ("SliceMode",               m_sliceMode,                0,    "0: Disable all Recon slice limits, 1: Enforce max # of LCUs, 2: Enforce max # of bytes, 3:specify tiles per dependent slice")
   ("SliceArgument",           m_sliceArgument,            0,    "Depending on SliceMode being:"
                                                                 "\t1: max number of CTUs per slice"
@@ -484,9 +476,7 @@ Bool TAppEncCfg::parseCfg( Int argc, Char* argv[] )
 
   ("PCMInputBitDepthFlag", m_bPCMInputBitDepthFlag, true)
   ("PCMFilterDisableFlag", m_bPCMFilterDisableFlag, false)
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
   ("IntraReferenceSmoothing", m_enableIntraReferenceSmoothing, true, "0: Disable use of intra reference smoothing. 1: Enable use of intra reference smoothing (not valid in V1 profiles)")
-#endif
 #if RExt__BACKWARDS_COMPATIBILITY_HM_TRANSQUANTBYPASS
   ("LosslessCuEnabled", m_useLossless, false)
 #endif
@@ -517,23 +507,13 @@ Bool TAppEncCfg::parseCfg( Int argc, Char* argv[] )
   ("FDM", m_useFastDecisionForMerge, true, "Fast decision for Merge RD Cost") 
   ("CFM", m_bUseCbfFastMode, false, "Cbf fast mode setting")
   ("ESD", m_useEarlySkipDetection, false, "Early SKIP detection setting")
-#if RATE_CONTROL_LAMBDA_DOMAIN
   ( "RateControl",         m_RCEnableRateControl,   false, "Rate control: enable rate control" )
   ( "TargetBitrate",       m_RCTargetBitrate,           0, "Rate control: target bitrate" )
-#if M0036_RC_IMPROVEMENT
   ( "KeepHierarchicalBit", m_RCKeepHierarchicalBit,     0, "Rate control: 0: equal bit allocation; 1: fixed ratio bit allocation; 2: adaptive ratio bit allocation" )
-#else
-  ( "KeepHierarchicalBit", m_RCKeepHierarchicalBit, false, "Rate control: keep hierarchical bit allocation in rate control algorithm" )
-#endif
   ( "LCULevelRateControl", m_RCLCULevelRC,           true, "Rate control: true: LCU level RC; false: picture level RC" )
   ( "RCLCUSeparateModel",  m_RCUseLCUSeparateModel,  true, "Rate control: use LCU level separate R-lambda model" )
   ( "InitialQP",           m_RCInitialQP,               0, "Rate control: initial QP" )
   ( "RCForceIntraQP",      m_RCForceIntraQP,        false, "Rate control: force intra QP to be equal to initial QP" )
-#else
-  ("RateCtrl,-rc", m_enableRateCtrl, false, "Rate control on/off")
-  ("TargetBitrate,-tbr", m_targetBitrate, 0, "Input target bitrate")
-  ("NumLCUInUnit,-nu", m_numLCUInUnit, 0, "Number of LCUs in an Unit")
-#endif
 
   ("TransquantBypassEnableFlag", m_TransquantBypassEnableFlag, false, "transquant_bypass_enable_flag indicator in PPS")
 #if RExt__BACKWARDS_COMPATIBILITY_HM_TRANSQUANTBYPASS
@@ -632,13 +612,11 @@ Bool TAppEncCfg::parseCfg( Int argc, Char* argv[] )
                                                               "\t0: disable")
   ("SEITemporalLevel0Index",         m_temporalLevel0IndexSEIEnabled,          0, "Control generation of temporal level 0 index SEI messages")
   ("SEIGradualDecodingRefreshInfo",  m_gradualDecodingRefreshInfoEnabled,      0, "Control generation of gradual decoding refresh information SEI message")
-#if RExt__M0042_NO_DISPLAY_SEI
   ("SEINoDisplay",                   m_noDisplaySEITLayer,                     0, "Control generation of no display SEI message\n"
                                                                                   "\tN: 0 < N enable no display SEI message for temporal layer N or higher\n"
                                                                                   "\t0: disable")
-#endif
   ("SEIDecodingUnitInfo",            m_decodingUnitInfoSEIEnabled,             0, "Control generation of decoding unit information SEI message.")
-  ("SEISOPDescription",              m_SOPDescriptionSEIEnabled,              0, "Control generation of SOP description SEI messages")
+  ("SEISOPDescription",              m_SOPDescriptionSEIEnabled,               0, "Control generation of SOP description SEI messages")
   ("SEIScalableNesting",             m_scalableNestingSEIEnabled,              0, "Control generation of scalable nesting SEI messages")
   ;
   
@@ -962,7 +940,7 @@ Void TAppEncCfg::xCheckParameter()
   xConfirmPara( m_inputBitDepth[CHANNEL_TYPE_LUMA  ] < 8,                                   "InputBitDepth must be at least 8" );
   xConfirmPara( m_inputBitDepth[CHANNEL_TYPE_CHROMA] < 8,                                   "InputBitDepthC must be at least 8" );
 
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING && !RExt__HIGH_BIT_DEPTH_SUPPORT
+#if !RExt__HIGH_BIT_DEPTH_SUPPORT
   if (m_useExtendedPrecision)
   {
     for (UInt channelType = 0; channelType < MAX_NUM_CHANNEL_TYPE; channelType++)
@@ -991,7 +969,6 @@ Void TAppEncCfg::xCheckParameter()
   xConfirmPara( m_iGOPSize > 1 &&  m_iGOPSize % 2,                                          "GOP Size must be a multiple of 2, if GOP Size is greater than 1" );
   xConfirmPara( (m_iIntraPeriod > 0 && m_iIntraPeriod < m_iGOPSize) || m_iIntraPeriod == 0, "Intra period must be more than GOP size, or -1 , not 0" );
   xConfirmPara( m_iDecodingRefreshType < 0 || m_iDecodingRefreshType > 2,                   "Decoding Refresh Type must be equal to 0, 1 or 2" );
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
   xConfirmPara (m_transformSkipLog2MaxSize < 2, "Transform Skip Log2 Max Size must be at least 2 (4x4)");
   xConfirmPara ( ( m_profile==Profile::MAIN || m_profile==Profile::MAIN10 || m_profile==Profile::MAINSTILLPICTURE ) && m_transformSkipLog2MaxSize!=2, "Transform Skip Log2 Max Size must be 2 for V1 profiles.");
   if (m_transformSkipLog2MaxSize!=2 && m_useTransformSkipFast)
@@ -999,10 +976,9 @@ Void TAppEncCfg::xCheckParameter()
     fprintf(stderr, "***************************************************************************\n");
     fprintf(stderr, "** WARNING: Transform skip fast is enabled (which only tests NxN splits),**\n");
     fprintf(stderr, "**          but transform skip log2 max size is not 2 (4x4)              **\n");
-    fprintf(stderr, "**          It may be better to disabled transform skip fast mode        **\n");
+    fprintf(stderr, "**          It may be better to disable transform skip fast mode         **\n");
     fprintf(stderr, "***************************************************************************\n");
   }
-#endif
 
   xConfirmPara( m_iQP <  -6 * (m_internalBitDepth[CHANNEL_TYPE_LUMA] - 8) || m_iQP > 51,    "QP exceeds supported range (-QpBDOffsety to 51)" );
   xConfirmPara( m_loopFilterBetaOffsetDiv2 < -6 || m_loopFilterBetaOffsetDiv2 > 6,        "Loop Filter Beta Offset div. 2 exceeds supported range (-6 to 6)");
@@ -1504,7 +1480,6 @@ Void TAppEncCfg::xCheckParameter()
     xConfirmPara( m_extendedWhiteLevelLumaCodeValue < m_nominalWhiteLevelLumaCodeValue, "SEIToneMapExtendedWhiteLevelLumaCodeValue shall be greater than or equal to SEIToneMapNominalWhiteLevelLumaCodeValue");
   }
 
-#if RATE_CONTROL_LAMBDA_DOMAIN
   if ( m_RCEnableRateControl )
   {
     if ( m_RCForceIntraQP )
@@ -1517,19 +1492,6 @@ Void TAppEncCfg::xCheckParameter()
     }
     xConfirmPara( m_uiDeltaQpRD > 0, "Rate control cannot be used together with slice level multiple-QP optimization!\n" );
   }
-#else
-  if(m_enableRateCtrl)
-  {
-    Int numLCUInWidth  = (m_iSourceWidth  / m_uiMaxCUWidth) + (( m_iSourceWidth  %  m_uiMaxCUWidth ) ? 1 : 0);
-    Int numLCUInHeight = (m_iSourceHeight / m_uiMaxCUHeight)+ (( m_iSourceHeight %  m_uiMaxCUHeight) ? 1 : 0);
-    Int numLCUInPic    =  numLCUInWidth * numLCUInHeight;
-
-    xConfirmPara( (numLCUInPic % m_numLCUInUnit) != 0, "total number of LCUs in a frame should be completely divided by NumLCUInUnit" );
-
-    m_iMaxDeltaQP       = MAX_DELTA_QP;
-    m_iMaxCuDQPDepth    = MAX_CUDQP_DEPTH;
-  }
-#endif
 
 #if RExt__BACKWARDS_COMPATIBILITY_HM_TRANSQUANTBYPASS
   xConfirmPara(!m_TransquantBypassEnableFlag && m_CUTransquantBypassFlagValue, "CUTransquantBypassFlagValue cannot be 1 when TransquantBypassEnableFlag is 0");
@@ -1572,10 +1534,9 @@ Void TAppEncCfg::xSetGlobal()
   {
     g_bitDepth   [channelType] = m_internalBitDepth[channelType];
     g_PCMBitDepth[channelType] = m_bPCMInputBitDepthFlag ? m_inputBitDepth[channelType] : m_internalBitDepth[channelType];
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
+
     if (m_useExtendedPrecision) g_maxTrDynamicRange[channelType] = std::max<Int>(15, (g_bitDepth[channelType] + 6));
     else                        g_maxTrDynamicRange[channelType] = 15;
-#endif
   }
 }
 
@@ -1635,25 +1596,17 @@ Void TAppEncCfg::xPrintParameter()
   printf("GOP size                        : %d\n", m_iGOPSize );
   printf("Internal bit depth              : (Y:%d, C:%d)\n", m_internalBitDepth[CHANNEL_TYPE_LUMA], m_internalBitDepth[CHANNEL_TYPE_CHROMA] );
   printf("PCM sample bit depth            : (Y:%d, C:%d)\n", g_PCMBitDepth[CHANNEL_TYPE_LUMA],      g_PCMBitDepth[CHANNEL_TYPE_CHROMA] );
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   printf("Extended precision processing   : %s\n", (m_useExtendedPrecision ? "Enabled" : "Disabled") );
-#endif
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
   printf("Intra reference smoothing       : %s\n", (m_enableIntraReferenceSmoothing ? "Enabled" : "Disabled") );
-#endif
 #if RExt__NRCE2_RESIDUAL_DPCM
   printf("Intra residual DPCM             : %s\n", (m_useResidualDPCM[MODE_INTRA] ? "Enabled" : "Disabled") );
   printf("Inter residual DPCM             : %s\n", (m_useResidualDPCM[MODE_INTER] ? "Enabled" : "Disabled") );
 #endif
-#if RExt__N0256_INTRA_BLOCK_COPY
   printf("Intra Block Copying             : %s\n", m_useIntraBlockCopy ? "Enabled" : "Disabled");
-#endif
 #if RExt__NRCE2_RESIDUAL_ROTATION
   printf("Residual rotation               : %s\n", m_useResidualRotation ? "Enabled" : "Disabled");
 #endif
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
   printf("Single significance map context : %s\n", m_useSingleSignificanceMapContext ? "Enabled" : "Disabled");
-#endif
 #if RExt__LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_EVALUATION
   switch (m_costMode)
   {
@@ -1664,8 +1617,9 @@ Void TAppEncCfg::xPrintParameter()
     default:                                printf("Cost function:                  : Unknown\n"); break;
   }
 #endif
-  #if RATE_CONTROL_LAMBDA_DOMAIN
+
   printf("RateControl                     : %d\n", m_RCEnableRateControl );
+
   if(m_RCEnableRateControl)
   {
     printf("TargetBitrate                   : %d\n", m_RCTargetBitrate );
@@ -1675,14 +1629,7 @@ Void TAppEncCfg::xPrintParameter()
     printf("InitialQP                       : %d\n", m_RCInitialQP );
     printf("ForceIntraQP                    : %d\n", m_RCForceIntraQP );
   }
-#else
-  printf("RateControl                     : %d\n", m_enableRateCtrl);
-  if(m_enableRateCtrl)
-  {
-    printf("TargetBitrate                   : %d\n", m_targetBitrate);
-    printf("NumLCUInUnit                    : %d\n", m_numLCUInUnit);
-  }
-#endif
+
   printf("Max Num Merge Candidates        : %d\n", m_maxNumMergeCand);
   printf("\n");
   
@@ -1703,9 +1650,7 @@ Void TAppEncCfg::xPrintParameter()
   printf("RQT:%d ", 1     );
   printf("TransformSkip:%d ",     m_useTransformSkip              );
   printf("TransformSkipFast:%d ", m_useTransformSkipFast       );
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
   printf("TransformSkipLog2MaxSize:%d ", m_transformSkipLog2MaxSize);
-#endif
   printf("Slice: M=%d ", m_sliceMode);
   if (m_sliceMode!=0)
   {
@@ -1719,7 +1664,9 @@ Void TAppEncCfg::xPrintParameter()
   printf("CIP:%d ", m_bUseConstrainedIntraPred);
   printf("SAO:%d ", (m_bUseSAO)?(1):(0));
   printf("PCM:%d ", (m_usePCM && (1<<m_uiPCMLog2MinSize) <= m_uiMaxCUWidth)? 1 : 0);
+#if !HM_CLEANUP_SAO
   printf("SAOLcuBasedOptimization:%d ", (m_saoLcuBasedOptimization)?(1):(0));
+#endif
 
 #if RExt__BACKWARDS_COMPATIBILITY_HM_TRANSQUANTBYPASS
   printf("LosslessCuEnabled:%d ", (m_useLossless)? 1:0 );

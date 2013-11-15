@@ -111,7 +111,8 @@ Void TAppDecTop::decode()
 
   // main decoder loop
   Bool openedReconFile = false; // reconstruction file not yet opened. (must be performed after SPS is seen)
-
+  Bool loopFiltered = false;
+  
   while (!!bitstreamFile)
   {
     /* location serves to work around a design fault in the decoder, whereby
@@ -169,9 +170,13 @@ Void TAppDecTop::decode()
         }
       }
     }
-    if (bNewPicture || !bitstreamFile)
+    if (bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS)
     {
-      m_cTDecTop.executeLoopFilters(poc, pcListPic);
+      if (!loopFiltered || bitstreamFile)
+      {
+        m_cTDecTop.executeLoopFilters(poc, pcListPic);
+      }
+      loopFiltered = (nalu.m_nalUnitType == NAL_UNIT_EOS);
     }
 
     if( pcListPic )
@@ -186,7 +191,7 @@ Void TAppDecTop::decode()
         m_cTVideoIOYuvReconFile.open( m_pchReconFile, true, m_outputBitDepth, g_bitDepth ); // write mode
         openedReconFile = true;
       }
-      if ( bNewPicture && 
+      if ( bNewPicture &&
            (   nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL
             || nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP
             || nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_BLA_N_LP
@@ -194,6 +199,10 @@ Void TAppDecTop::decode()
             || nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_BLA_W_LP ) )
       {
         xFlushOutput( pcListPic );
+      }
+      if (nalu.m_nalUnitType == NAL_UNIT_EOS)
+      {
+        xFlushOutput( pcListPic );        
       }
       // write reconstruction to file
       if(bNewPicture)
@@ -244,6 +253,11 @@ Void TAppDecTop::xInitDecLib()
  */
 Void TAppDecTop::xWriteOutput( TComList<TComPic*>* pcListPic, UInt tId )
 {
+  if (pcListPic->empty())
+  {
+    return;
+  }
+
   TComList<TComPic*>::iterator iterPic   = pcListPic->begin();
   Int numPicsNotYetDisplayed = 0;
 
@@ -292,7 +306,7 @@ Void TAppDecTop::xWriteOutput( TComList<TComPic*>* pcListPic, UInt tId )
           const Window &conf = pcPicTop->getConformanceWindow();
           const Window &defDisp = m_respectDefDispWindow ? pcPicTop->getDefDisplayWindow() : Window();
           const Bool isTff = pcPicTop->isTopField();
-#if RExt__M0042_NO_DISPLAY_SEI
+ 
           Bool display = true;
           if( m_decodedNoDisplaySEIEnabled )
           {
@@ -303,18 +317,20 @@ Void TAppDecTop::xWriteOutput( TComList<TComPic*>* pcListPic, UInt tId )
               display = false;
             }
           }
+
           if (display)
-#endif
+          {
             m_cTVideoIOYuvReconFile.write( pcPicTop->getPicYuvRec(), pcPicBottom->getPicYuvRec(),
 #if RExt__COLOUR_SPACE_CONVERSIONS
-                                         m_outputColourSpaceConvert,
+                                           m_outputColourSpaceConvert,
 #else
-                                         RGBChannelOrder,
+                                           RGBChannelOrder,
 #endif
-                                         conf.getWindowLeftOffset() + defDisp.getWindowLeftOffset(),
-                                         conf.getWindowRightOffset() + defDisp.getWindowRightOffset(),
-                                         conf.getWindowTopOffset() + defDisp.getWindowTopOffset(),
-                                         conf.getWindowBottomOffset() + defDisp.getWindowBottomOffset(), NUM_CHROMA_FORMAT, isTff );
+                                           conf.getWindowLeftOffset() + defDisp.getWindowLeftOffset(),
+                                           conf.getWindowRightOffset() + defDisp.getWindowRightOffset(),
+                                           conf.getWindowTopOffset() + defDisp.getWindowTopOffset(),
+                                           conf.getWindowBottomOffset() + defDisp.getWindowBottomOffset(), NUM_CHROMA_FORMAT, isTff );
+          }
         }
         
         // update POC of display order
@@ -422,7 +438,7 @@ Void TAppDecTop::xWriteOutput( TComList<TComPic*>* pcListPic, UInt tId )
  */
 Void TAppDecTop::xFlushOutput( TComList<TComPic*>* pcListPic )
 {
-  if(!pcListPic)
+  if(!pcListPic || pcListPic->empty())
   {
     return;
   } 

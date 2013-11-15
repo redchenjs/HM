@@ -157,7 +157,9 @@ protected:
   Bool      m_bUseSAO;
   Int       m_maxNumOffsetsPerPic;
   Bool      m_saoLcuBoundary;
+#if !HM_CLEANUP_SAO
   Bool      m_saoLcuBasedOptimization;
+#endif
 
 #if RExt__BACKWARDS_COMPATIBILITY_HM_TRANSQUANTBYPASS
   //====== Lossless ========
@@ -179,14 +181,8 @@ protected:
 #if ADAPTIVE_QP_SELECTION
   Bool      m_bUseAdaptQpSelect;
 #endif
-
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   Bool      m_useExtendedPrecision;
-#endif
-#if RExt__N0256_INTRA_BLOCK_COPY
   Bool      m_useIntraBlockCopy;
-#endif
-
   Bool      m_bUseAdaptiveQP;
   Int       m_iQPAdaptationRange;
   
@@ -204,15 +200,11 @@ protected:
   Bool      m_useEarlySkipDetection;
   Bool      m_useTransformSkip;
   Bool      m_useTransformSkipFast;
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
   UInt      m_transformSkipLog2MaxSize;
-#endif
 #if RExt__NRCE2_RESIDUAL_ROTATION
   Bool      m_useResidualRotation;
 #endif
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
   Bool      m_useSingleSignificanceMapContext;
-#endif
 #if RExt__NRCE2_RESIDUAL_DPCM
   Bool      m_useResidualDPCM[NUMBER_OF_PREDICTION_MODES];
 #endif
@@ -235,9 +227,7 @@ protected:
   UInt      m_uiPCMBitDepthLuma;
   UInt      m_uiPCMBitDepthChroma;
   Bool      m_bPCMFilterDisableFlag;
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
   Bool      m_disableIntraReferenceSmoothing;
-#endif
   Bool      m_loopFilterAcrossTilesEnabledFlag;
   Int       m_iUniformSpacingIdr;
   Int       m_iNumColumnsMinus1;
@@ -285,9 +275,7 @@ protected:
   Int       m_displayOrientationSEIAngle;
   Int       m_temporalLevel0IndexSEIEnabled;
   Int       m_gradualDecodingRefreshInfoEnabled;
-#if RExt__M0042_NO_DISPLAY_SEI
   Int       m_noDisplaySEITLayer;
-#endif
   Int       m_decodingUnitInfoSEIEnabled;
   Int       m_SOPDescriptionSEIEnabled;
   Int       m_scalableNestingSEIEnabled;
@@ -300,23 +288,13 @@ protected:
   Char*     m_scalingListFile;          ///< quantization matrix file name
   Int       m_TMVPModeId;
   Int       m_signHideFlag;
-#if RATE_CONTROL_LAMBDA_DOMAIN
   Bool      m_RCEnableRateControl;
   Int       m_RCTargetBitrate;
-#if M0036_RC_IMPROVEMENT
   Int       m_RCKeepHierarchicalBit;
-#else
-  Bool      m_RCKeepHierarchicalBit;
-#endif
   Bool      m_RCLCULevelRC;
   Bool      m_RCUseLCUSeparateModel;
   Int       m_RCInitialQP;
   Bool      m_RCForceIntraQP;
-#else
-  Bool      m_enableRateCtrl;                                ///< Flag for using rate control algorithm
-  Int       m_targetBitrate;                                 ///< target bitrate
-  Int       m_numLCUInUnit;                                  ///< Total number of LCUs in a frame should be divided by the NumLCUInUnit
-#endif
   Bool      m_TransquantBypassEnableFlag;                     ///< transquant_bypass_enable_flag setting in PPS.
 #if RExt__BACKWARDS_COMPATIBILITY_HM_TRANSQUANTBYPASS
   Bool      m_CUTransquantBypassFlagValue;                    ///< if transquant_bypass_enable_flag, the fixed value to use for the per-CU cu_transquant_bypass_flag.
@@ -447,15 +425,11 @@ public:
   Bool      getUseAdaptQpSelect             ()           { return   m_bUseAdaptQpSelect; }
 #endif
 
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   Bool      getUseExtendedPrecision         ()         const { return m_useExtendedPrecision;  }
   Void      setUseExtendedPrecision         (Bool value)     { m_useExtendedPrecision = value; }
-#endif
 
-#if RExt__N0256_INTRA_BLOCK_COPY
   Bool      getUseIntraBlockCopy()         const   { return m_useIntraBlockCopy;  }
   Void      setUseIntraBlockCopy(Bool value)       { m_useIntraBlockCopy = value; }
-#endif
 
   Void      setUseAdaptiveQP                ( Bool  b )      { m_bUseAdaptiveQP = b; }
   Void      setQPAdaptationRange            ( Int   i )      { m_iQPAdaptationRange = i; }
@@ -536,11 +510,11 @@ public:
   Bool      getUseHADME                     ()      { return m_bUseHADME;   }
   Bool      getUseRDOQ                      ()      { return m_useRDOQ;    }
   Bool      getUseRDOQTS                    ()      { return m_useRDOQTS;  }
-  Int      getRDpenalty                  ()      { return m_rdPenalty;  }
+  Int       getRDpenalty                    ()      { return m_rdPenalty;  }
   Bool      getUseFastEnc                   ()      { return m_bUseFastEnc; }
   Bool      getUseEarlyCU                   ()      { return m_bUseEarlyCU; }
   Bool      getUseFastDecisionForMerge      ()      { return m_useFastDecisionForMerge; }
-  Bool      getUseCbfFastMode           ()      { return m_bUseCbfFastMode; }
+  Bool      getUseCbfFastMode               ()      { return m_bUseCbfFastMode; }
   Bool      getUseEarlySkipDetection        ()      { return m_useEarlySkipDetection; }
   Bool      getUseConstrainedIntraPred      ()      { return m_bUseConstrainedIntraPred; }
   Bool      getPCMInputBitDepthFlag         ()      { return m_bPCMInputBitDepthFlag;   }
@@ -555,24 +529,18 @@ public:
   Bool getUseResidualRotation                          ()            const { return m_useResidualRotation;  }
   Void setUseResidualRotation                          (const Bool value)  { m_useResidualRotation = value; }
 #endif
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
   Bool getUseSingleSignificanceMapContext              ()            const { return m_useSingleSignificanceMapContext;  }
   Void setUseSingleSignificanceMapContext              (const Bool value)  { m_useSingleSignificanceMapContext = value; }
-#endif
 #if RExt__NRCE2_RESIDUAL_DPCM
   Bool getUseResidualDPCM (const PredMode predictionMode)        const      { return m_useResidualDPCM[predictionMode];  }
   Void setUseResidualDPCM (const PredMode predictionMode, const Bool value) { m_useResidualDPCM[predictionMode] = value; }
 #endif
   Bool getUseTransformSkipFast                         ()      { return m_useTransformSkipFast;    }
   Void setUseTransformSkipFast                         ( Bool b ) { m_useTransformSkipFast  = b;   }
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
   UInt getTransformSkipLog2MaxSize                     () const      { return m_transformSkipLog2MaxSize;     }
   Void setTransformSkipLog2MaxSize                     ( UInt u )    { m_transformSkipLog2MaxSize  = u;       }
-#endif
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
   Void setDisableIntraReferenceSmoothing               (Bool bValue) { m_disableIntraReferenceSmoothing=bValue; }
   Bool getDisableIntraReferenceSmoothing               ()      const { return m_disableIntraReferenceSmoothing; }
-#endif
 
   Int*      getdQPs                         ()      { return m_aidQP;       }
   UInt      getDeltaQpRD                    ()      { return m_uiDeltaQpRD; }
@@ -596,8 +564,10 @@ public:
   Int   getMaxNumOffsetsPerPic                   ()                    { return m_maxNumOffsetsPerPic; }
   Void  setSaoLcuBoundary              (Bool val)      { m_saoLcuBoundary = val; }
   Bool  getSaoLcuBoundary              ()              { return m_saoLcuBoundary; }
+#if !HM_CLEANUP_SAO
   Void  setSaoLcuBasedOptimization               (Bool val)            { m_saoLcuBasedOptimization = val; }
   Bool  getSaoLcuBasedOptimization               ()                    { return m_saoLcuBasedOptimization; }
+#endif
   Void  setLFCrossTileBoundaryFlag               ( Bool   val  )       { m_loopFilterAcrossTilesEnabledFlag = val; }
   Bool  getLFCrossTileBoundaryFlag               ()                    { return m_loopFilterAcrossTilesEnabledFlag;   }
   Void  setUniformSpacingIdr           ( Int i )           { m_iUniformSpacingIdr = i; }
@@ -715,10 +685,8 @@ public:
   Int   getTemporalLevel0IndexSEIEnabled()               { return m_temporalLevel0IndexSEIEnabled; }
   Void  setGradualDecodingRefreshInfoEnabled(Int b)      { m_gradualDecodingRefreshInfoEnabled = b;    }
   Int   getGradualDecodingRefreshInfoEnabled()           { return m_gradualDecodingRefreshInfoEnabled; }
-#if RExt__M0042_NO_DISPLAY_SEI
   Void  setNoDisplaySEITLayer(Int b)                     { m_noDisplaySEITLayer = b;    }
   Int   getNoDisplaySEITLayer()                          { return m_noDisplaySEITLayer; }
-#endif
   Void  setDecodingUnitInfoSEIEnabled(Int b)                { m_decodingUnitInfoSEIEnabled = b;    }
   Int   getDecodingUnitInfoSEIEnabled()                     { return m_decodingUnitInfoSEIEnabled; }
   Void  setSOPDescriptionSEIEnabled(Int b)                { m_SOPDescriptionSEIEnabled = b; }
@@ -741,18 +709,12 @@ public:
   Int       getTMVPModeId ()         { return m_TMVPModeId; }
   Void      setSignHideFlag( Int signHideFlag ) { m_signHideFlag = signHideFlag; }
   Int       getSignHideFlag()                    { return m_signHideFlag; }
-#if RATE_CONTROL_LAMBDA_DOMAIN
   Bool      getUseRateCtrl         ()              { return m_RCEnableRateControl;   }
   Void      setUseRateCtrl         ( Bool b )      { m_RCEnableRateControl = b;      }
   Int       getTargetBitrate       ()              { return m_RCTargetBitrate;       }
   Void      setTargetBitrate       ( Int bitrate ) { m_RCTargetBitrate  = bitrate;   }
-#if M0036_RC_IMPROVEMENT
   Int       getKeepHierBit         ()              { return m_RCKeepHierarchicalBit; }
   Void      setKeepHierBit         ( Int i )       { m_RCKeepHierarchicalBit = i;    }
-#else
-  Bool      getKeepHierBit         ()              { return m_RCKeepHierarchicalBit; }
-  Void      setKeepHierBit         ( Bool b )      { m_RCKeepHierarchicalBit = b;    }
-#endif
   Bool      getLCULevelRC          ()              { return m_RCLCULevelRC; }
   Void      setLCULevelRC          ( Bool b )      { m_RCLCULevelRC = b; }
   Bool      getUseLCUSeparateModel ()              { return m_RCUseLCUSeparateModel; }
@@ -761,14 +723,6 @@ public:
   Void      setInitialQP           ( Int QP )      { m_RCInitialQP = QP;             }
   Bool      getForceIntraQP        ()              { return m_RCForceIntraQP;        }
   Void      setForceIntraQP        ( Bool b )      { m_RCForceIntraQP = b;           }
-#else
-  Bool      getUseRateCtrl    ()                { return m_enableRateCtrl;    }
-  Void      setUseRateCtrl    (Bool flag)       { m_enableRateCtrl = flag;    }
-  Int       getTargetBitrate  ()                { return m_targetBitrate;     }
-  Void      setTargetBitrate  (Int target)      { m_targetBitrate  = target;  }
-  Int       getNumLCUInUnit   ()                { return m_numLCUInUnit;      }
-  Void      setNumLCUInUnit   (Int numLCUs)     { m_numLCUInUnit   = numLCUs; }
-#endif
   Bool      getTransquantBypassEnableFlag()           { return m_TransquantBypassEnableFlag; }
   Void      setTransquantBypassEnableFlag(Bool flag)  { m_TransquantBypassEnableFlag = flag; }
 #if RExt__BACKWARDS_COMPATIBILITY_HM_TRANSQUANTBYPASS

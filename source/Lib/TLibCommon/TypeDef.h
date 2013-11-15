@@ -90,7 +90,10 @@
 // Tool Switches
 // ====================================================================================================================
 
-#define FIX1071 1 ///< fix for issue #1071
+#define HM_CLEANUP_SAO                                    1  ///< JCTVC-N0230, 1) three SAO encoder-only software bugfixes. 2) new SAO implementation without picture quadtree, fine-grained slice legacies, and other redundancies.
+#if HM_CLEANUP_SAO  
+#define SAO_ENCODE_ALLOW_USE_PREDEBLOCK                   1
+#endif
 
 #define MAX_NUM_PICS_IN_SOP                            1024
 
@@ -100,13 +103,6 @@
 #define MAX_VPS_NUM_HRD_PARAMETERS                        1
 #define MAX_VPS_OP_SETS_PLUS1                          1024
 #define MAX_VPS_NUH_RESERVED_ZERO_LAYER_ID_PLUS1          1
-
-#define RATE_CONTROL_LAMBDA_DOMAIN                        1  ///< JCTVC-K0103, rate control by R-lambda model
-#define M0036_RC_IMPROVEMENT                        1  ///< JCTVC-M0036, improvement for R-lambda model based rate control
-#define TICKET_1090_FIX                             1
-
-#define RC_FIX                                      1  /// suggested fix for M0036
-#define RATE_CONTROL_INTRA                          1  ///< JCTVC-M0257, rate control for intra 
 
 #define MAXIMUM_INTRA_FILTERED_WIDTH                     16
 #define MAXIMUM_INTRA_FILTERED_HEIGHT                    16
@@ -130,7 +126,9 @@
 #define C1FLAG_NUMBER                                     8 // maximum number of largerThan1 flag coded in one chunk :  16 in HM5
 #define C2FLAG_NUMBER                                     1 // maximum number of largerThan2 flag coded in one chunk:  16 in HM5
 
+#if !HM_CLEANUP_SAO
 #define REMOVE_SAO_LCU_ENC_CONSTRAINTS_3                  1  ///< disable the encoder constraint that conditionally disable SAO for chroma for entire slice in interleaved mode
+#endif
 
 #define SAO_ENCODING_CHOICE                               1  ///< I0184: picture early termination
 #if SAO_ENCODING_CHOICE
@@ -147,9 +145,7 @@
 #define MAX_NUM_SPS                                      16
 #define MAX_NUM_PPS                                      64
 
-#define WEIGHTED_CHROMA_DISTORTION                        1   ///< F386: weighting of chroma for RDO
 #define RDOQ_CHROMA_LAMBDA                                1   ///< F386: weighting of chroma for RDOQ
-#define SAO_CHROMA_LAMBDA                                 1   ///< F386: weighting of chroma for SAO
 
 #define MIN_SCAN_POS_CROSS                                4
 
@@ -165,8 +161,6 @@
 #define ARL_C_PRECISION                                   7      ///< G382: 7-bit arithmetic precision
 #define LEVEL_RANGE                                      30     ///< G382: max coefficient level in statistics collection
 #endif
-
-#define NS_HAD                                            0
 
 #define HHI_RQT_INTRA_SPEEDUP                             1           ///< tests one best mode with full rqt
 #define HHI_RQT_INTRA_SPEEDUP_MOD                         0           ///< tests two best modes with full rqt
@@ -230,8 +224,6 @@
 #define AMP_MRG                                           1 ///< encoder only force merge for AMP partition (no motion search for AMP)
 #endif
 
-#define SCALING_LIST_OUTPUT_RESULT                        0 //JCTVC-G880/JCTVC-G1016 quantization matrices
-
 #define CABAC_INIT_PRESENT_FLAG                           1
 
 #define LUMA_INTERPOLATION_FILTER_SUB_SAMPLE_POSITIONS    4 // NOTE: RExt - new definition
@@ -269,19 +261,8 @@
 #define RExt__INDEPENDENT_FORWARD_AND_INVERSE_TRANSFORMS                       1 ///< 0 = use the same set of matrices for both forward and inverse transform, 1 (default) = allow the set of matrices used for the forward transform to be differemt from that used for the inverse transform
 #define RExt__HIGH_PRECISION_FORWARD_TRANSFORM                                 0 ///< 0 (default) use original 6-bit transform matrices for both forward and inverse transform, 1 = use original matrices for inverse transform and high precision matrices for forward transform
 
-#define RExt__M0042_NO_DISPLAY_SEI                                             1 ///< 0 = disable code for 'no-display' SEI messages, 1 (default) = enable code for 'no-display' SEI messages.
 #define RExt__NRCE2_RESIDUAL_DPCM                                              1 ///< 0 = use residual DPCM for intra lossless coding only, 1 (default) = enable residual DPCM for inter and allow control for intra and inter via sequence parameter set flags
 #define RExt__NRCE2_RESIDUAL_ROTATION                                          1 ///< 0 = process transform-skipped and transquant-bypassed TU coefficients in the same order as transformed TUs, 1 (default) = allow (conditional on sequence-level flag) transform-skipped and transquant-bypassed TUs to be rotated through 180 degrees prior to entropy coding
-#define RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT                            1 ///< 0 = select significance map context variables for transform-skipped and transquant-bypassed TUs in the same way as for transformed TUs, 1 (default) = allow (conditional on sequence-level flag) transform-skipped and transquant-bypassed TUs to select a single significance map context variable for all coefficients
-#define RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG                    1 ///< 0 = do not include SPS flag to disable intra-reference/neighbouring-smoothing; 1 (default) = include SPS flag to disable intra-reference/neighbouring-smoothing
-#define RExt__N0141_USE_1_TO_1_422_CHROMA_QP_MAPPING                           1 ///< 0 = use 4:2:0 and 4:2:2 chroma mapping table (4:4:4 is 1:1); 1 (default) = only use 4:2:0 chroma mapping table (4:2:2 and 4:4:4 are 1:1)
-#define RExt__N0188_EXTENDED_PRECISION_PROCESSING                              1 ///< 0 = use internal precisions as in HEVC version 1, 1 (default) = allow (configured by command line) internal precisions to be increased to accommodate high bit depth video
-#define RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS                         1 ///< 0 = use Luma 32x32 scaling lists for chroma 32x32, 1 (default) = use Chroma 16x16 for Chroma32x32
-#define RExt__N0256_INTRA_BLOCK_COPY                                           1 ///< 0 = disable intra block copying, 1 (default) enable block copying (depending on SPS parameter)
-#define RExt__N0275_TRANSFORM_SKIP_SHIFT_CLIPPING                              1 ///< 0 = allow any shift in transform skip, 1 (default) = when in extended-precision mode, limit the shift such that a right-shift never occurs
-#define RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE                        1 ///< 0 = do not include PPS transform-skip maximum size; 1 (default) = include PPS transform-skip maximum size
-
-#define RExt__MEETINGNOTES_UNLIMITED_SIZE_LEVEL                                1 ///< 0 = disable definition of level 8.5 (unlimited picture size for still pictures), 1 (default) = enable definition of level 8.5
 
 //------------------------------------------------
 // Backwards-compatibility
@@ -290,14 +271,13 @@
 #define RExt__BACKWARDS_COMPATIBILITY_HM_TRANSQUANTBYPASS                      0 ///< Maintain backwards compatibility with HM's transquant lossless encoding methods
 
 // NOTE: RExt - Compatibility defaults chosen so that simulations run with the common test conditions do not differ with HM.
-#define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_986                            1 ///< Maintain backwards compatibility with HM for ticket 986  (encodeQtCbfZero called with inconsistent depths)
+#if !HM_CLEANUP_SAO
 #define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_987                            0 ///< Maintain backwards compatibility with HM for ticket 987  (SAO mixing quadtree indices and components)
-#define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_990                            0 ///< Maintain backwards compatibility with HM for ticket 990  (RDOQ_CHROMA_LAMBDA interaction with TComTrQuant)
-#define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_990_SAO                        1 ///< Maintain backwards compatibility with HM for ticket 990  (RDOQ_CHROMA_LAMBDA interaction with TComTrQuant - SAO interaction subclause). Ticket 993 compatibility must disabled.
-#define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_992                            0 ///< Maintain backwards compatibility with HM for ticket 992  (MAX_CU_SIZE)
-#define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_1026                           1 ///< Maintain backwards compatibility with HM for ticket 1026 (xGetICRate is deprecated)
 #define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_1082                           0 ///< Maintain backwards compatibility with HM for ticket 1082 (SAO bit depth increase (only affects operation at greater than 10-bit)
+#endif
+#define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_1148                           0 ///< Maintain backwards compatibility with HM for ticket 1148 (fix for temporal layer calculation when using field coding)
 #define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_1149                           1 ///< Maintain backwards compatibility with HM for ticket 1149 (allow the encoder to test not using SAO at all)
+#define RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_1192                           1 ///< Maintain backwards compatibility with HM for ticket 1192 (Enable separate chroma channel lambdas in SAO)
 #define RExt__BACKWARDS_COMPATIBILITY_RBSP_EMULATION_PREVENTION                0 ///< Maintain backwards compatibility with (use same algorithm as) HM for RBSP emulation prevention
 
 //------------------------------------------------
@@ -321,10 +301,8 @@
 #define RDPCM_INTER_LOSSY                                                      1  ///< Performs RDPCM on motion compensated residuals in lossy coding
 #endif
 
-#if RExt__N0256_INTRA_BLOCK_COPY
 #define INTRABC_LEFTWIDTH                                                     64 ///< if the left CTU is used for IntraBC, this is set to be the CTU width; if only the left 4 columns are used, this is set to be 4
 #define INTRABC_FASTME                                                         1 ///< Fast motion estimation
-#endif
 
 #if RExt__LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_EVALUATION
 #define RExt__LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP                      0 ///< QP to use for lossless coding.
@@ -337,10 +315,6 @@
 
 #if ((RExt__HIGH_PRECISION_FORWARD_TRANSFORM != 0) && ((RExt__INDEPENDENT_FORWARD_AND_INVERSE_TRANSFORMS == 0) || (RExt__HIGH_BIT_DEPTH_SUPPORT == 0)))
 #error ERROR: cannot enable RExt__HIGH_PRECISION_FORWARD_TRANSFORM without RExt__INDEPENDENT_FORWARD_AND_INVERSE_TRANSFORMS and RExt__HIGH_BIT_DEPTH_SUPPORT
-#endif
-
-#if ((RExt__N0275_TRANSFORM_SKIP_SHIFT_CLIPPING != 0) && (RExt__N0188_EXTENDED_PRECISION_PROCESSING == 0))
-#error ERROR: RExt__N0275_TRANSFORM_SKIP_SHIFT_CLIPPING cannot be enabled without RExt__N0188_EXTENDED_PRECISION_PROCESSING
 #endif
 
 // ====================================================================================================================
@@ -466,23 +440,19 @@ enum PredMode
 {
   MODE_INTER                 = 0,     ///< inter-prediction mode
   MODE_INTRA                 = 1,     ///< intra-prediction mode
-  NUMBER_OF_PREDICTION_MODES = 2
-#if RExt__N0256_INTRA_BLOCK_COPY
-  ,MODE_INTRABC              = 127    ///< intraBC mode - considered to be an intra mode with an intra_bc_flag=1 with a root cbf.
-#endif
+  NUMBER_OF_PREDICTION_MODES = 2,
+  MODE_INTRABC               = 127    ///< intraBC mode - considered to be an intra mode with an intra_bc_flag=1 with a root cbf.
 };
 
 /// reference list index
 enum RefPicList
 {
-  REF_PIC_LIST_0 = 0,   ///< reference list 0
-  REF_PIC_LIST_1 = 1,   ///< reference list 1
-  NUM_REF_PIC_LIST_01 = 2,
-#if RExt__N0256_INTRA_BLOCK_COPY
-  REF_PIC_LIST_INTRABC = 2,
+  REF_PIC_LIST_0               = 0,   ///< reference list 0
+  REF_PIC_LIST_1               = 1,   ///< reference list 1
+  NUM_REF_PIC_LIST_01          = 2,
+  REF_PIC_LIST_INTRABC         = 2,
   NUM_REF_PIC_LIST_CU_MV_FIELD = 3,
-#endif
-  REF_PIC_LIST_X = 100  ///< special mark
+  REF_PIC_LIST_X               = 100  ///< special mark
 };
 
 /// distortion function index
@@ -590,12 +560,8 @@ enum SignificanceMapContextType
   CONTEXT_TYPE_4x4    = 0,
   CONTEXT_TYPE_8x8    = 1,
   CONTEXT_TYPE_NxN    = 2,
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
   CONTEXT_TYPE_SINGLE = 3,
   CONTEXT_NUMBER_OF_TYPES = 4
-#else
-  CONTEXT_NUMBER_OF_TYPES = 3
-#endif
 };
 
 enum ScalingListSize
@@ -626,6 +592,62 @@ enum SliceConstraint
   FIXED_NUMBER_OF_TILES  = 3,          ///< slices / slice segments span an integer number of tiles
 };
 
+#if HM_CLEANUP_SAO
+
+enum SAOMode //mode
+{
+  SAO_MODE_OFF = 0,
+  SAO_MODE_NEW,
+  SAO_MODE_MERGE,
+  NUM_SAO_MODES
+};
+
+enum SAOModeMergeTypes 
+{
+  SAO_MERGE_LEFT =0,
+  SAO_MERGE_ABOVE,
+  NUM_SAO_MERGE_TYPES
+};
+
+
+enum SAOModeNewTypes 
+{
+  SAO_TYPE_START_EO =0,
+  SAO_TYPE_EO_0 = SAO_TYPE_START_EO,
+  SAO_TYPE_EO_90,
+  SAO_TYPE_EO_135,
+  SAO_TYPE_EO_45,
+  
+  SAO_TYPE_START_BO,
+  SAO_TYPE_BO = SAO_TYPE_START_BO,
+
+  NUM_SAO_NEW_TYPES
+};
+#define NUM_SAO_EO_TYPES_LOG2 2
+
+enum SAOEOClasses 
+{
+  SAO_CLASS_EO_FULL_VALLEY = 0,
+  SAO_CLASS_EO_HALF_VALLEY = 1,
+  SAO_CLASS_EO_PLAIN       = 2,
+  SAO_CLASS_EO_HALF_PEAK   = 3,
+  SAO_CLASS_EO_FULL_PEAK   = 4,
+  NUM_SAO_EO_CLASSES,
+};
+
+#define NUM_SAO_BO_CLASSES_LOG2  5
+enum SAOBOClasses
+{
+  //SAO_CLASS_BO_BAND0 = 0,
+  //SAO_CLASS_BO_BAND1,
+  //SAO_CLASS_BO_BAND2,
+  //...
+  //SAO_CLASS_BO_BAND31,
+
+  NUM_SAO_BO_CLASSES = (1<<NUM_SAO_BO_CLASSES_LOG2),
+};
+#else
+
 #define NUM_DOWN_PART 4
 
 enum SAOTypeLen
@@ -644,6 +666,7 @@ enum SAOType
   SAO_BO,
   MAX_NUM_SAO_TYPE
 };
+#endif
 
 namespace Profile
 {
@@ -682,9 +705,7 @@ namespace Level
     LEVEL6   = 180,
     LEVEL6_1 = 183,
     LEVEL6_2 = 186,
-#if RExt__MEETINGNOTES_UNLIMITED_SIZE_LEVEL
     LEVEL8_5 = 255,
-#endif
   };
 }
 
@@ -727,6 +748,38 @@ typedef       UInt            Distortion;        ///< distortion measurement
 /// parameters for adaptive loop filter
 class TComPicSym;
 
+#if HM_CLEANUP_SAO
+
+#define MAX_NUM_SAO_CLASSES  32  //(NUM_SAO_EO_GROUPS > NUM_SAO_BO_GROUPS)?NUM_SAO_EO_GROUPS:NUM_SAO_BO_GROUPS
+
+struct SAOOffset
+{
+  SAOMode modeIdc; // NEW, MERGE, OFF
+  Int typeIdc;     // union of SAOModeMergeTypes and SAOModeNewTypes, depending on modeIdc.
+  Int typeAuxInfo; // BO: starting band index
+  Int offset[MAX_NUM_SAO_CLASSES];
+
+  SAOOffset();
+  ~SAOOffset();
+  Void reset();
+
+  const SAOOffset& operator= (const SAOOffset& src);
+};
+
+struct SAOBlkParam
+{
+
+  SAOBlkParam();
+  ~SAOBlkParam();
+  Void reset();
+  const SAOBlkParam& operator= (const SAOBlkParam& src);
+  SAOOffset& operator[](Int compIdx){ return offsetParam[compIdx];}
+private:
+  SAOOffset offsetParam[MAX_NUM_COMPONENT];
+
+};
+
+#else
 typedef struct _SaoQTPart
 {
   Int         iBestType;
@@ -779,7 +832,7 @@ struct SAOParam
   Int          numCuInWidth;
   ~SAOParam();
 };
-
+#endif
 
 /// parameters for deblocking filter
 typedef struct _LFCUParam

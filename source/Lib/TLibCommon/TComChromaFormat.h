@@ -137,34 +137,20 @@ static inline UInt getChromasCorrespondingPULumaIdx(const UInt lumaLCUIdx, const
 //Intra prediction  ====================================================================================================
 //======================================================================================================================
 
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
 static inline Bool filterIntraReferenceSamples (const ChannelType chType, const ChromaFormat chFmt, const Bool intraReferenceSmoothingDisabled)
 {
   return (!intraReferenceSmoothingDisabled) && (isLuma(chType) || (chFmt == CHROMA_444));
 }
-#else
-static inline Bool filterIntraReferenceSamples (const ChannelType chType, const ChromaFormat chFmt)
-{
-  return isLuma(chType) || (chFmt == CHROMA_444);
-}
-#endif
 
 
 //======================================================================================================================
 //Transform and Quantisation  ==========================================================================================
 //======================================================================================================================
 
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
 static inline Bool TUCompRectHasAssociatedTransformSkipFlag(const TComRectangle &rectSamples, const UInt transformSkipLog2MaxSize)
 {
   return (rectSamples.width <= (1<<transformSkipLog2MaxSize)); // NOTE: RExt - Only width is checked. Allows Nx2N (for 4:2:2) and NxN only.
 }
-#else
-static inline Bool TUCompRectHasAssociatedTransformSkipFlag(const TComRectangle &rectSamples)
-{
-  return (rectSamples.width <= MAX_TS_WIDTH); // NOTE: RExt - Only width is checked. Allows 4x8 (for 4:2:2) and 4x4 only.
-}
-#endif
 
 
 //------------------------------------------------
@@ -183,11 +169,7 @@ Void setQPforQuant(       class QpParam      &result,
 // NOTE: RExt - Represents scaling through forward transform, although this is not exact for 422 with TransformSkip enabled.
 static inline Int getTransformShift(const ChannelType type, const UInt uiLog2TrSize)
 {
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   return g_maxTrDynamicRange[type] - g_bitDepth[type] - uiLog2TrSize;
-#else
-  return MAX_TR_DYNAMIC_RANGE - g_bitDepth[type] - uiLog2TrSize;
-#endif
 }
 
 
@@ -203,51 +185,11 @@ static inline Int getScaledChromaQP(Int unscaledChromaQP, const ChromaFormat chF
 //Scaling lists  =======================================================================================================
 //======================================================================================================================
 
-#if RExt__N0256_INTRA_BLOCK_COPY
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
 static inline Int getScalingListType(const PredMode predMode, const ComponentID compID)
 {
   return ((predMode != MODE_INTER) ? 0 : MAX_NUM_COMPONENT) + compID;
 }
-#else
-// for a given TU size, there is one list per intra/inter & channel combination (i.e. 6 per TU size), apart from 32x32,
-// because 32x32 Cb/Cr TUs don't exist in 4:2:0
-static inline Int getScalingListType(const PredMode predMode, const UInt log2TUSize, const ComponentID compID)
-{
-#if RExt__INCREASE_NUMBER_OF_SCALING_LISTS_FOR_CHROMA
-  return ((predMode != MODE_INTER) ? 0 : MAX_NUM_COMPONENT) + compID;
-#else
-  const Int base=((predMode != MODE_INTER) ? 0 : MAX_NUM_COMPONENT);
-  const Int numForAdjSizeID=g_scalingListNum[log2TUSize-2];
 
-  return (numForAdjSizeID!=SCALING_LIST_NUM) ? base : base+compID;
-#endif
-}
-#endif
-
-#else
-
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
-static inline Int getScalingListType(const Bool isIntra, const ComponentID compID)
-{
-  return (isIntra ? 0 : MAX_NUM_COMPONENT) + compID;
-}
-#else
-// for a given TU size, there is one list per intra/inter & channel combination (i.e. 6 per TU size), apart from 32x32,
-// because 32x32 Cb/Cr TUs don't exist in 4:2:0
-static inline Int getScalingListType(const Bool isIntra, const UInt log2TUSize, const ComponentID compID)
-{
-#if RExt__INCREASE_NUMBER_OF_SCALING_LISTS_FOR_CHROMA
-  return (isIntra ? 0 : MAX_NUM_COMPONENT) + compID;
-#else
-  const Int base=(isIntra ? 0 : MAX_NUM_COMPONENT);
-  const Int numForAdjSizeID=g_scalingListNum[log2TUSize-2];
-
-  return (numForAdjSizeID!=SCALING_LIST_NUM) ? base : base+compID;
-#endif
-}
-#endif
-#endif
 
 //------------------------------------------------
 
@@ -262,6 +204,7 @@ static inline UInt getScalingListCoeffIdx(const ChromaFormat chFmt, const Compon
     return ( (blkPos & (~(tuWidth-1)))<<1) + (blkPos & (tuWidth-1));
 }
 #endif
+
 
 //======================================================================================================================
 //Context variable selection  ==========================================================================================

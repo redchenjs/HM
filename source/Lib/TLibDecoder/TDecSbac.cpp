@@ -94,9 +94,7 @@ TDecSbac::TDecSbac()
 , m_interRdpcmFlagSCModel        ( 1,             MAX_NUM_CHANNEL_TYPE,   NUM_INTER_RDPCM_FLAG_CTX         , m_contextModels + m_numContextModels, m_numContextModels)
 , m_interRdpcmDirSCModel         ( 1,             MAX_NUM_CHANNEL_TYPE,   NUM_INTER_RDPCM_DIR_CTX          , m_contextModels + m_numContextModels, m_numContextModels)
 #endif
-#if RExt__N0256_INTRA_BLOCK_COPY
 , m_cIntraBCPredFlagSCModel      (1,              1,                      NUM_INTRABC_PRED_CTX             , m_contextModels + m_numContextModels, m_numContextModels)
-#endif
 {
   assert( m_numContextModels <= MAX_NUM_CTX_MOD );
 }
@@ -161,9 +159,7 @@ Void TDecSbac::resetEntropy(TComSlice* pSlice)
   m_interRdpcmFlagSCModel.initBuffer        ( sliceType, qp, (UChar*)INIT_INTER_RDPCM_FLAG);
   m_interRdpcmDirSCModel.initBuffer         ( sliceType, qp, (UChar*)INIT_INTER_RDPCM_DIR);
 #endif
-#if RExt__N0256_INTRA_BLOCK_COPY
   m_cIntraBCPredFlagSCModel.initBuffer      ( sliceType, qp, (UChar*)INIT_INTRABC_PRED_FLAG );
-#endif
 
   m_uiLastDQpNonZero  = 0;
 
@@ -219,9 +215,7 @@ Void TDecSbac::updateContextTables( SliceType eSliceType, Int iQp )
   m_interRdpcmFlagSCModel.initBuffer        ( eSliceType, iQp, (UChar*)INIT_INTER_RDPCM_FLAG );
   m_interRdpcmDirSCModel.initBuffer         ( eSliceType, iQp, (UChar*)INIT_INTER_RDPCM_DIR );
 #endif
-#if RExt__N0256_INTRA_BLOCK_COPY
   m_cIntraBCPredFlagSCModel.initBuffer      ( eSliceType, iQp, (UChar*)INIT_INTRABC_PRED_FLAG );
-#endif
 
   m_pcTDecBinIf->start();
 }
@@ -453,21 +447,19 @@ Void TDecSbac::parseSkipFlag( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth 
   }
 }
 
-#if RExt__N0256_INTRA_BLOCK_COPY
 Void TDecSbac::parseIntraBCFlag( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiPartIdx, UInt uiDepth )
 {  
   UInt uiSymbol = 0;
 
-  {
-    UInt uiCtxIntraBC = pcCU->getCtxIntraBCFlag( uiAbsPartIdx ) ;
-    m_pcTDecBinIf->decodeBin( uiSymbol, m_cIntraBCPredFlagSCModel.get( 0, 0, uiCtxIntraBC ) RExt__DECODER_DEBUG_BIT_STATISTICS_PASS_OPT_ARG(STATS__CABAC_BITS__INTRA_BLOCK_COPY_VECTOR)); 
+  UInt uiCtxIntraBC = pcCU->getCtxIntraBCFlag( uiAbsPartIdx ) ;
+  m_pcTDecBinIf->decodeBin( uiSymbol, m_cIntraBCPredFlagSCModel.get( 0, 0, uiCtxIntraBC ) RExt__DECODER_DEBUG_BIT_STATISTICS_PASS_OPT_ARG(STATS__CABAC_BITS__INTRA_BLOCK_COPY_VECTOR)); 
   
-    DTRACE_CABAC_VL( g_nSymbolCounter++ );
-    DTRACE_CABAC_T( "\tIntraBCFlag" );
-    DTRACE_CABAC_T( "\tuiSymbol: ");
-    DTRACE_CABAC_V( uiSymbol );
-    DTRACE_CABAC_T( "\n");
-  }
+  DTRACE_CABAC_VL( g_nSymbolCounter++ );
+  DTRACE_CABAC_T( "\tIntraBCFlag" );
+  DTRACE_CABAC_T( "\tuiSymbol: ");
+  DTRACE_CABAC_V( uiSymbol );
+  DTRACE_CABAC_T( "\n");
+
   if ( uiSymbol )
   {
     pcCU->setPartSizeSubParts( SIZE_2Nx2N, uiAbsPartIdx, uiDepth );
@@ -480,9 +472,6 @@ Void TDecSbac::parseIntraBCFlag( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiPar
 
 Void TDecSbac::parseIntraBC ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiPartIdx, UInt uiDepth )
 {  
-
-
-
   Int mvx = 0, mvy = 0;
   
   parseMvd(pcCU, uiAbsPartIdx, uiPartIdx, uiDepth, REF_PIC_LIST_INTRABC);
@@ -494,7 +483,6 @@ Void TDecSbac::parseIntraBC ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiPartId
 
   pcCU->getCUMvField( REF_PIC_LIST_INTRABC )->setAllMv( cMv, pcCU->getPartitionSize( uiAbsPartIdx ), uiAbsPartIdx, uiDepth, uiPartIdx );
 }
-#endif
 
 
 /** parse merge flag
@@ -590,9 +578,7 @@ Void TDecSbac::parsePartSize( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth 
   UInt uiSymbol, uiMode = 0;
   PartSize eMode;
 
-#if RExt__N0256_INTRA_BLOCK_COPY
   assert( ! pcCU->isIntraBC( uiAbsPartIdx ) );
-#endif
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
   const TComCodingStatisticsClassType ctype(STATS__CABAC_BITS__PART_SIZE, g_aucConvertToBit[g_uiMaxCUWidth>>uiDepth]+2);
@@ -979,11 +965,7 @@ Void TDecSbac::parseQtCbf( TComTU &rTu, const ComponentID compID )
 
   const UInt absPartIdx       = rTu.GetAbsPartIdxTU(compID);
   const UInt TUDepth          = rTu.GetTransformDepthRel();
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_986
-  const UInt uiCtx            = pcCU->getCtxQtCbf( rTu, toChannelType(compID), false );
-#else
   const UInt uiCtx            = pcCU->getCtxQtCbf( rTu, toChannelType(compID) );
-#endif
   const UInt contextSet       = toChannelType(compID);
 
 #if (RExt__SQUARE_TRANSFORM_CHROMA_422 != 0)
@@ -1097,11 +1079,7 @@ void TDecSbac::parseTransformSkipFlags (TComTU &rTu, ComponentID component)
     return;
   }
 
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
   if (!TUCompRectHasAssociatedTransformSkipFlag(rTu.getRect(component), pcCU->getSlice()->getPPS()->getTransformSkipLog2MaxSize()))
-#else
-  if (!TUCompRectHasAssociatedTransformSkipFlag(rTu.getRect(component)))
-#endif
   {
     return;
   }
@@ -1619,14 +1597,159 @@ Void TDecSbac::parseSaoTypeIdx (UInt&  ruiVal)
     m_pcTDecBinIf->decodeBinEP( uiCode RExt__DECODER_DEBUG_BIT_STATISTICS_PASS_OPT_ARG(STATS__CABAC_BITS__SAO) );
     if (uiCode == 0)
     {
+#if HM_CLEANUP_SAO
+      ruiVal = 1;
+#else
       ruiVal = 5;
+#endif
     }
     else
     {
+#if HM_CLEANUP_SAO
+      ruiVal = 2;
+#else
       ruiVal = 1;
+#endif
     }
   }
 }
+
+#if HM_CLEANUP_SAO
+
+Void TDecSbac::parseSaoSign(UInt& val)
+{
+  m_pcTDecBinIf->decodeBinEP ( val RExt__DECODER_DEBUG_BIT_STATISTICS_PASS_OPT_ARG(STATS__CABAC_BITS__SAO) ); 
+}
+
+Void TDecSbac::parseSAOBlkParam (SAOBlkParam& saoBlkParam
+                                , Bool* sliceEnabled
+                                , Bool leftMergeAvail
+                                , Bool aboveMergeAvail
+                                )
+{
+  UInt uiSymbol;
+
+  Bool isLeftMerge = false;
+  Bool isAboveMerge= false;
+
+  if(leftMergeAvail)
+  {
+    parseSaoMerge(uiSymbol); //sao_merge_left_flag
+    isLeftMerge = (uiSymbol?true:false);
+  }
+
+  if( aboveMergeAvail && !isLeftMerge)
+  {
+    parseSaoMerge(uiSymbol); //sao_merge_up_flag
+    isAboveMerge = (uiSymbol?true:false);
+  }
+
+  if(isLeftMerge || isAboveMerge) //merge mode
+  {
+    for (UInt componentIndex = 0; componentIndex < MAX_NUM_COMPONENT; componentIndex++)
+    {
+      saoBlkParam[componentIndex].modeIdc = SAO_MODE_MERGE;
+      saoBlkParam[componentIndex].typeIdc = (isLeftMerge)?SAO_MERGE_LEFT:SAO_MERGE_ABOVE;
+    }
+  }
+  else //new or off mode
+  {    
+    for(Int compIdx=0; compIdx < MAX_NUM_COMPONENT; compIdx++)
+    {
+      SAOOffset& ctbParam = saoBlkParam[compIdx];
+
+      if(!sliceEnabled[compIdx])
+      {
+        //off
+        ctbParam.modeIdc = SAO_MODE_OFF;
+        continue;
+      }
+
+      //type
+      if(compIdx == COMPONENT_Y || compIdx == COMPONENT_Cb)
+      {
+        parseSaoTypeIdx(uiSymbol); //sao_type_idx_luma or sao_type_idx_chroma
+
+        assert(uiSymbol ==0 || uiSymbol ==1 || uiSymbol ==2);
+
+        if(uiSymbol ==0) //OFF
+        {
+          ctbParam.modeIdc = SAO_MODE_OFF;
+        }
+        else if(uiSymbol == 1) //BO
+        {
+          ctbParam.modeIdc = SAO_MODE_NEW;
+          ctbParam.typeIdc = SAO_TYPE_START_BO;
+        }
+        else //2, EO
+        {
+          ctbParam.modeIdc = SAO_MODE_NEW;
+          ctbParam.typeIdc = SAO_TYPE_START_EO;
+        }
+
+      }
+      else //Cr, follow Cb SAO type
+      {
+        ctbParam.modeIdc = saoBlkParam[COMPONENT_Cb].modeIdc;
+        ctbParam.typeIdc = saoBlkParam[COMPONENT_Cb].typeIdc;
+      }
+
+      if(ctbParam.modeIdc == SAO_MODE_NEW)
+      {
+        Int offset[4];
+        for(Int i=0; i< 4; i++)
+        {
+          parseSaoMaxUvlc(uiSymbol,  g_saoMaxOffsetQVal[compIdx] ); //sao_offset_abs
+          offset[i] = (Int)uiSymbol;
+        }
+
+        if(ctbParam.typeIdc == SAO_TYPE_START_BO)
+        {
+          for(Int i=0; i< 4; i++)
+          {
+            if(offset[i] != 0)
+            {
+              parseSaoSign(uiSymbol); //sao_offset_sign
+              if(uiSymbol)
+              {
+                offset[i] = -offset[i];
+              }
+            }
+          }
+          parseSaoUflc(NUM_SAO_BO_CLASSES_LOG2, uiSymbol ); //sao_band_position
+          ctbParam.typeAuxInfo = uiSymbol;
+        
+          for(Int i=0; i<4; i++)
+          {
+            ctbParam.offset[(ctbParam.typeAuxInfo+i)%MAX_NUM_SAO_CLASSES] = offset[i];
+          }      
+        
+        }
+        else //EO
+        {
+          ctbParam.typeAuxInfo = 0;
+
+          if(compIdx == COMPONENT_Y || compIdx == COMPONENT_Cb)
+          {
+            parseSaoUflc(NUM_SAO_EO_TYPES_LOG2, uiSymbol ); //sao_eo_class_luma or sao_eo_class_chroma
+            ctbParam.typeIdc += uiSymbol;
+          }
+          else
+          {
+            ctbParam.typeIdc = saoBlkParam[COMPONENT_Cb].typeIdc;
+          }
+          ctbParam.offset[SAO_CLASS_EO_FULL_VALLEY] = offset[0];
+          ctbParam.offset[SAO_CLASS_EO_HALF_VALLEY] = offset[1];
+          ctbParam.offset[SAO_CLASS_EO_PLAIN      ] = 0;
+          ctbParam.offset[SAO_CLASS_EO_HALF_PEAK  ] = -offset[2];
+          ctbParam.offset[SAO_CLASS_EO_FULL_PEAK  ] = -offset[3];
+        }
+      }
+    }
+  }
+}
+
+#else
 
 inline Void copySaoOneLcuParam(SaoLcuParam* psDst,  SaoLcuParam* psSrc)
 {
@@ -1804,6 +1927,8 @@ Void TDecSbac::parseSaoOneLcuInterleaving(Int rx, Int ry, SAOParam* pSaoParam, T
     }
   }
 }
+
+#endif
 
 /**
  - Initialize our contexts from the nominated source.

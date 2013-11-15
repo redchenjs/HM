@@ -69,14 +69,6 @@ TComSlice::TComSlice()
 , m_pcPic                         ( NULL )
 , m_colFromL0Flag                 ( 1 )
 , m_colRefIdx                     ( 0 )
-#if SAO_CHROMA_LAMBDA
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_990_SAO
-, m_dLambdaLuma                   ( 0.0 )
-, m_dLambdaChroma                 ( 0.0 )
-#endif
-#else
-, m_dLambda                       ( 0.0 )
-#endif
 , m_uiTLayer                      ( 0 )
 , m_bTLayerSwitchingFlag          ( false )
 , m_sliceMode                     ( 0 )
@@ -108,9 +100,7 @@ TComSlice::TComSlice()
 
   for (UInt component = 0; component < MAX_NUM_COMPONENT; component++)
   {
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_990_SAO==0
-    m_dLambdas[component]=0.0;
-#endif
+    m_lambdas            [component] = 0.0;
     m_iSliceChromaQpDelta[component] = 0;
   }
   
@@ -133,6 +123,9 @@ TComSlice::TComSlice()
   resetWpScaling();
   initWpAcDcParam();
   m_saoEnabledFlag = false;
+#if HM_CLEANUP_SAO
+  m_saoEnabledFlagChroma = false;
+#endif
 }
 
 TComSlice::~TComSlice()
@@ -315,15 +308,9 @@ Void TComSlice::setList1IdxToList0Idx()
   }
 }
 
-#if FIX1071
 Void TComSlice::setRefPicList( TComList<TComPic*>& rcListPic, Bool checkNumPocTotalCurr )
-#else
-Void TComSlice::setRefPicList( TComList<TComPic*>& rcListPic )
-#endif
 {
-#if FIX1071
   if (!checkNumPocTotalCurr)
-#endif
   {
     if (m_eSliceType == I_SLICE)
     {
@@ -394,7 +381,7 @@ Void TComSlice::setRefPicList( TComList<TComPic*>& rcListPic )
   TComPic*  rpsCurrList0[MAX_NUM_REF+1];
   TComPic*  rpsCurrList1[MAX_NUM_REF+1];
   Int numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
-#if FIX1071
+
   if (checkNumPocTotalCurr)
   {
     // The variable NumPocTotalCurr is derived as specified in subclause 7.4.7.2. It is a requirement of bitstream conformance that the following applies to the value of NumPocTotalCurr:
@@ -418,7 +405,6 @@ Void TComSlice::setRefPicList( TComList<TComPic*>& rcListPic )
     m_aiNumRefIdx[0] = getNumRefIdx(REF_PIC_LIST_0);
     m_aiNumRefIdx[1] = getNumRefIdx(REF_PIC_LIST_1);
   }
-#endif
 
   Int cIdx = 0;
   for ( i=0; i<NumPocStCurr0; i++, cIdx++)
@@ -705,16 +691,9 @@ Void TComSlice::copySliceInfo(TComSlice *pSrc)
 
   m_colFromL0Flag        = pSrc->m_colFromL0Flag;
   m_colRefIdx            = pSrc->m_colRefIdx;
-#if SAO_CHROMA_LAMBDA 
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_990_SAO
-  m_dLambdaLuma          = pSrc->m_dLambdaLuma;
-  m_dLambdaChroma        = pSrc->m_dLambdaChroma;
-#else
-  setLambda(pSrc->getLambdas());
-#endif
-#else
-  m_dLambda              = pSrc->m_dLambda;
-#endif
+  
+  setLambdas(pSrc->getLambdas());
+
   for (i = 0; i < NUM_REF_PIC_LIST_01; i++)
   {
     for (j = 0; j < MAX_NUM_REF; j++)
@@ -1042,7 +1021,7 @@ Void TComSlice::applyReferencePictureSet( TComList<TComPic*>& rcListPic, TComRef
     //check that pictures of higher temporal layers are not used
     assert(rpcPic->getSlice( 0 )->isReferenced()==0||rpcPic->getUsedByCurr()==0||rpcPic->getTLayer()<=this->getTLayer());
     //check that pictures of higher or equal temporal layer are not in the RPS if the current picture is a TSA picture
-    if(this->getNalUnitType() == NAL_UNIT_CODED_SLICE_TLA_R || this->getNalUnitType() == NAL_UNIT_CODED_SLICE_TSA_N)
+    if(this->getNalUnitType() == NAL_UNIT_CODED_SLICE_TSA_R || this->getNalUnitType() == NAL_UNIT_CODED_SLICE_TSA_N)
     {
       assert(rpcPic->getSlice( 0 )->isReferenced()==0||rpcPic->getTLayer()<this->getTLayer());
     }
@@ -1201,11 +1180,7 @@ Int TComSlice::checkThatAllRefPicsAreAvailable( TComList<TComPic*>& rcListPic, T
 
 /** Function for constructing an explicit Reference Picture Set out of the available pictures in a referenced Reference Picture Set
 */
-#if FIX1071
 Void TComSlice::createExplicitReferencePictureSetFromReference( TComList<TComPic*>& rcListPic, TComReferencePictureSet *pReferencePictureSet, Bool isRAP)
-#else
-Void TComSlice::createExplicitReferencePictureSetFromReference( TComList<TComPic*>& rcListPic, TComReferencePictureSet *pReferencePictureSet)
-#endif
 {
   TComPic* rpcPic;
   Int i, j;
@@ -1230,11 +1205,8 @@ Void TComSlice::createExplicitReferencePictureSetFromReference( TComList<TComPic
         // This picture exists as a reference picture
         // and should be added to the explicit Reference Picture Set
         pcRPS->setDeltaPOC(k, pReferencePictureSet->getDeltaPOC(i));
-#if FIX1071
         pcRPS->setUsed(k, pReferencePictureSet->getUsed(i) && (!isRAP));
-#else
-        pcRPS->setUsed(k, pReferencePictureSet->getUsed(i));
-#endif
+
         if(pcRPS->getDeltaPOC(k) < 0)
         {
           nrOfNegativePictures++;
@@ -1436,23 +1408,15 @@ TComSPS::TComSPS()
 , m_usePCM                    (false)
 , m_pcmLog2MaxSize            (  5)
 , m_uiPCMLog2MinSize          (  7)
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
 , m_useExtendedPrecision      (false)
-#endif
-#if RExt__N0256_INTRA_BLOCK_COPY
-, m_useIntraBlockCopy     (false)
-#endif
+, m_useIntraBlockCopy         (false)
 , m_useLossless               (false)
 #if RExt__NRCE2_RESIDUAL_ROTATION
 , m_useResidualRotation       (false)
 #endif
-#if RExt__NRCE2_SINGLE_SIGNIFICANCE_MAP_CONTEXT
 , m_useSingleSignificanceMapContext(false)
-#endif
 , m_bPCMFilterDisableFlag     (false)
-#if RExt__N0080_INTRA_REFERENCE_SMOOTHING_DISABLED_FLAG
 , m_disableIntraReferenceSmoothing(false)
-#endif
 , m_uiBitsForPOC              (  8)
 , m_numLongTermRefPicSPS      (  0)  
 , m_uiMaxTrSize               ( 32)
@@ -1624,9 +1588,7 @@ TComPPS::TComPPS()
 , m_numRefIdxL1DefaultActive         (1)
 , m_TransquantBypassEnableFlag       (false)
 , m_useTransformSkip                 (false)
-#if RExt__N0288_SPECIFY_TRANSFORM_SKIP_MAXIMUM_SIZE
 , m_transformSkipLog2MaxSize         (2)
-#endif
 , m_dependentSliceSegmentsEnabledFlag(false)
 , m_tilesEnabledFlag                 (false)
 , m_entropyCodingSyncEnabledFlag     (false)
@@ -1881,11 +1843,7 @@ Void TComSlice::setDefaultScalingList()
 {
   for(UInt sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
   {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
     for(UInt listId=0;listId<SCALING_LIST_NUM;listId++)
-#else
-    for(UInt listId=0;listId<g_scalingListNum[sizeId];listId++)
-#endif
     {
       getScalingList()->processDefaultMatrix(sizeId, listId);
     }
@@ -1900,11 +1858,7 @@ Bool TComSlice::checkDefaultScalingList()
 
   for(UInt sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
   {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
     for(UInt listId=0;listId<SCALING_LIST_NUM;listId++)
-#else
-    for(UInt listId=0;listId<g_scalingListNum[sizeId];listId++)
-#endif
     {
       if( !memcmp(getScalingList()->getScalingListAddress(sizeId,listId), getScalingList()->getScalingListDefaultAddress(sizeId, listId),sizeof(Int)*min(MAX_MATRIX_COEF_NUM,(Int)g_scalingListSize[sizeId])) // check value of matrix
      && ((sizeId < SCALING_LIST_16x16) || (getScalingList()->getScalingListDC(sizeId,listId) == 16))) // check DC value
@@ -1913,11 +1867,8 @@ Bool TComSlice::checkDefaultScalingList()
       }
     }
   }
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
+
   return (defaultCounter == (SCALING_LIST_NUM * SCALING_LIST_SIZE_NUM )) ? false : true;
-#else
-  return (defaultCounter == (SCALING_LIST_NUM * SCALING_LIST_SIZE_NUM - 4)) ? false : true; // -4 for 32x32
-#endif
 }
 
 /** get scaling matrix from RefMatrixID
@@ -1954,15 +1905,11 @@ Bool TComScalingList::xParseScalingList(Char* pchFile)
   for(sizeIdc = 0; sizeIdc < SCALING_LIST_SIZE_NUM; sizeIdc++)
   {
     size = min(MAX_MATRIX_COEF_NUM,(Int)g_scalingListSize[sizeIdc]);
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
+
     for(listIdc = 0; listIdc < SCALING_LIST_NUM; listIdc++)
-#else
-    for(listIdc = 0; listIdc < g_scalingListNum[sizeIdc]; listIdc++)
-#endif
     {
       src = getScalingListAddress(sizeIdc, listIdc);
 
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
       if ((sizeIdc==SCALING_LIST_32x32) && (listIdc%(SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES) != 0)) // derive chroma32x32 from chroma16x16
       {
         const Int *srcNextSmallerSize = getScalingListAddress(sizeIdc-1, listIdc);
@@ -1974,57 +1921,53 @@ Bool TComScalingList::xParseScalingList(Char* pchFile)
       }
       else
       {
-#endif
-      fseek(fp,0,0);
-      do 
-      {
-        ret = fgets(line, LINE_SIZE, fp);
-        if ((ret==NULL)||(strstr(line, MatrixType[sizeIdc][listIdc])==NULL && feof(fp)))
-        {
-          printf("Error: can't read Matrix :: set Default Matrix\n");
-          return true;
-        }
-      }
-      while (strstr(line, MatrixType[sizeIdc][listIdc]) == NULL);
-      for (i=0; i<size; i++)
-      {
-        retval = fscanf(fp, "%d,", &data);
-        if (retval!=1)
-        {
-          printf("Error: can't read Matrix :: set Default Matrix\n");
-          return true;
-        }
-        src[i] = data;
-      }
-      //set DC value for default matrix check
-      setScalingListDC(sizeIdc,listIdc,src[0]);
-
-      if(sizeIdc > SCALING_LIST_8x8)
-      {
         fseek(fp,0,0);
         do 
         {
           ret = fgets(line, LINE_SIZE, fp);
-          if ((ret==NULL)||(strstr(line, MatrixType_DC[sizeIdc][listIdc])==NULL && feof(fp)))
+          if ((ret==NULL)||(strstr(line, MatrixType[sizeIdc][listIdc])==NULL && feof(fp)))
           {
-            printf("Error: can't read DC :: set Default Matrix\n");
+            printf("Error: can't read Matrix :: set Default Matrix\n");
             return true;
           }
         }
-        while (strstr(line, MatrixType_DC[sizeIdc][listIdc]) == NULL);
-        retval = fscanf(fp, "%d,", &data);
-        if (retval!=1)
+        while (strstr(line, MatrixType[sizeIdc][listIdc]) == NULL);
+        for (i=0; i<size; i++)
         {
-          printf("Error: can't read Matrix :: set Default Matrix\n");
-          return true;
+          retval = fscanf(fp, "%d,", &data);
+          if (retval!=1)
+          {
+            printf("Error: can't read Matrix :: set Default Matrix\n");
+            return true;
+          }
+          src[i] = data;
         }
-        //overwrite DC value when size of matrix is larger than 16x16
-        setScalingListDC(sizeIdc,listIdc,data);
-      }
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
-      }
-#endif
+        //set DC value for default matrix check
+        setScalingListDC(sizeIdc,listIdc,src[0]);
 
+        if(sizeIdc > SCALING_LIST_8x8)
+        {
+          fseek(fp,0,0);
+          do 
+          {
+            ret = fgets(line, LINE_SIZE, fp);
+            if ((ret==NULL)||(strstr(line, MatrixType_DC[sizeIdc][listIdc])==NULL && feof(fp)))
+            {
+              printf("Error: can't read DC :: set Default Matrix\n");
+              return true;
+            }
+          }
+          while (strstr(line, MatrixType_DC[sizeIdc][listIdc]) == NULL);
+          retval = fscanf(fp, "%d,", &data);
+          if (retval!=1)
+          {
+            printf("Error: can't read Matrix :: set Default Matrix\n");
+            return true;
+          }
+          //overwrite DC value when size of matrix is larger than 16x16
+          setScalingListDC(sizeIdc,listIdc,data);
+        }
+      }
     }
   }
   fclose(fp);
@@ -2037,18 +1980,10 @@ Void TComScalingList::init()
 {
   for(UInt sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
   {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
     for(UInt listId = 0; listId < SCALING_LIST_NUM; listId++)
-#else
-    for(UInt listId = 0; listId < g_scalingListNum[sizeId]; listId++)
-#endif
     {
       m_scalingListCoef[sizeId][listId] = new Int [min(MAX_MATRIX_COEF_NUM,(Int)g_scalingListSize[sizeId])];
     }
-#if !RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
-    if (g_scalingListNum[sizeId] < 2*MAX_NUM_COMPONENT)
-      m_scalingListCoef[SCALING_LIST_32x32][MAX_NUM_COMPONENT] = m_scalingListCoef[SCALING_LIST_32x32][g_scalingListNum[sizeId] - 1]; // copy address
-#endif
   }
 }
 
@@ -2058,11 +1993,7 @@ Void TComScalingList::destroy()
 {
   for(UInt sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
   {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
     for(UInt listId = 0; listId < SCALING_LIST_NUM; listId++)
-#else
-    for(UInt listId = 0; listId < g_scalingListNum[sizeId]; listId++)
-#endif
     {
       if(m_scalingListCoef[sizeId][listId]) delete [] m_scalingListCoef[sizeId][listId];
     }
@@ -2085,11 +2016,7 @@ Int* TComScalingList::getScalingListDefaultAddress(UInt sizeId, UInt listId)
     case SCALING_LIST_8x8:
     case SCALING_LIST_16x16:
     case SCALING_LIST_32x32:
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
       src = (listId < (SCALING_LIST_NUM/NUMBER_OF_PREDICTION_MODES) ) ? g_quantIntraDefault8x8 : g_quantInterDefault8x8;
-#else
-      src = (listId < (g_scalingListNum[sizeId]/2) ) ? g_quantIntraDefault8x8 : g_quantInterDefault8x8;
-#endif
       break;
     default:
       assert(0);
@@ -2115,11 +2042,7 @@ Void TComScalingList::checkDcOfMatrix()
 {
   for(UInt sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
   {
-#if RExt__N0192_DERIVED_CHROMA_32x32_SCALING_LISTS
     for(UInt listId = 0; listId < SCALING_LIST_NUM; listId++)
-#else
-    for(UInt listId = 0; listId < g_scalingListNum[sizeId]; listId++)
-#endif
     {
       //check default matrix?
       if(getScalingListDC(sizeId,listId) == 0)

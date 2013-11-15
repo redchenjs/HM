@@ -160,13 +160,8 @@ public:
   // Misc functions
 
 #if RDOQ_CHROMA_LAMBDA
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_990
-  Void setLambda(Double dLambdaLuma, Double dLambdaChroma) { m_dLambdaLuma = dLambdaLuma; m_dLambdaChroma = dLambdaChroma; }
-  Void selectLambda(ChannelType chType) { m_dLambda = isLuma(chType) ? m_dLambdaLuma : m_dLambdaChroma; }
-#else
-  Void setLambda(const Double dLambdas[MAX_NUM_COMPONENT]) { for(UInt i=0; i<MAX_NUM_COMPONENT; i++) m_dLambdas[i]=dLambdas[i]; }
-  Void selectLambda(const ComponentID compIdx) { m_dLambda = m_dLambdas[compIdx]; }
-#endif
+  Void setLambdas(const Double lambdas[MAX_NUM_COMPONENT]) { for (UInt component = 0; component < MAX_NUM_COMPONENT; component++) m_lambdas[component] = lambdas[component]; }
+  Void selectLambda(const ComponentID compIdx) { m_dLambda = m_lambdas[compIdx]; }
 #else
   Void setLambda(Double dLambda) { m_dLambda = dLambda;}
 #endif
@@ -231,12 +226,7 @@ protected:
 
 //  QpParam  m_cQP; - removed - placed on the stack.
 #if RDOQ_CHROMA_LAMBDA
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_990
-  Double   m_dLambdaLuma;
-  Double   m_dLambdaChroma;
-#else
-  Double   m_dLambdas[MAX_NUM_COMPONENT];
-#endif
+  Double   m_lambdas[MAX_NUM_COMPONENT];
 #endif
   Double   m_dLambda;
   UInt     m_uiRDOQOffset;
@@ -257,20 +247,12 @@ protected:
 
 private:
   // forward Transform
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   Void xT   ( const ComponentID compID, Bool useDST, Pel* piBlkResi, UInt uiStride, TCoeff* psCoeff, Int iWidth, Int iHeight );
-#else
-  Void xT   (Int bitDepth, Bool useDST, Pel* pResidual, UInt uiStride, TCoeff* plCoeff, Int iWidth, Int iHeight );
-#endif
 
   // skipping Transform
   Void xTransformSkip ( Pel* piBlkResi, UInt uiStride, TCoeff* psCoeff, TComTU &rTu, const ComponentID component );
 
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   Void signBitHidingHDQ( const ComponentID compID, TCoeff* pQCoef, TCoeff* pCoef, TCoeff* deltaU, const TUEntropyCodingParameters &codingParameters );
-#else
-  Void signBitHidingHDQ( TCoeff* pQCoef, TCoeff* pCoef, TCoeff* deltaU, const TUEntropyCodingParameters &codingParameters );
-#endif
 
   // quantization
   Void xQuant(       TComTU       &rTu,
@@ -310,15 +292,6 @@ __inline UInt              xGetCodedLevel  ( Double&                         rd6
                                              Double                          dTemp,
                                              Bool                            bLast        ) const;
 
-#if RExt__BACKWARDS_COMPATIBILITY_HM_TICKET_1026
-  __inline Double xGetICRateCost   ( UInt                            uiAbsLevel,
-                                     UShort                          ui16CtxNumOne,
-                                     UShort                          ui16CtxNumAbs,
-                                     UShort                          ui16AbsGoRice,
-                                     UInt                            c1Idx,
-                                     UInt                            c2Idx
-                                     ) const;
-#endif
 
   __inline Int xGetICRate  ( UInt                            uiAbsLevel,
                              UShort                          ui16CtxNumOne,
@@ -347,11 +320,7 @@ __inline UInt              xGetCodedLevel  ( Double&                         rd6
                  const QpParam      &cQP );
 
   // inverse transform
-#if RExt__N0188_EXTENDED_PRECISION_PROCESSING
   Void xIT    ( const ComponentID compID, Bool useDST, TCoeff* plCoef, Pel* pResidual, UInt uiStride, Int iWidth, Int iHeight );
-#else
-  Void xIT    ( Int bitDepth, Bool useDST, TCoeff* plCoef, Pel* pResidual, UInt uiStride, Int iWidth, Int iHeight );
-#endif
 
   // inverse skipping transform
   Void xITransformSkip ( TCoeff* plCoef, Pel* pResidual, UInt uiStride, TComTU &rTu, const ComponentID component );
